@@ -16,7 +16,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   return (
     <View style={s.tabBar}>
       {state.routes
-        .filter((r) => (descriptors[r.key].options as any).href !== null)
+        .filter((r) => r.name in TAB_ICONS)
         .map((route) => {
           const { options } = descriptors[route.key];
           const label = (options.title ?? route.name) as string;
@@ -50,7 +50,7 @@ export default function TabLayout() {
       <Tabs.Screen name="my-team"   options={{ title: 'My Team' }} />
       <Tabs.Screen name="standings" options={{ title: 'Standings' }} />
       <Tabs.Screen name="profile"   options={{ title: 'Profile' }} />
-      <Tabs.Screen name="draft"     options={{ href: null }} />
+      <Tabs.Screen name="draft"     options={{ title: 'Draft', href: null }} />
     </Tabs>
   );
 }
@@ -58,11 +58,9 @@ export default function TabLayout() {
 const s = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: T.tabBarBg,
-    borderRadius: R.tabBar,
-    marginHorizontal: 12,
-    marginBottom: 12,
-    paddingVertical: 8,
+    backgroundColor: T.accentDark,
+    paddingTop: 12,
+    paddingBottom: 32,
     paddingHorizontal: 4,
   },
   tab: {

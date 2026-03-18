@@ -270,6 +270,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#1a3a12',
     width: '100%',
+    maxWidth: 380,
     alignSelf: 'center',
   },
 

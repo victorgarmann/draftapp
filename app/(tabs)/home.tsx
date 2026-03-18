@@ -177,14 +177,6 @@ export default function HomeScreen() {
                 {locked ? 'Lineup locked — token window open' : formatLineupDeadline(nextMd.deadline)}
               </Text>
             </View>
-            <View style={s.matchdayCtas}>
-              <TouchableOpacity style={s.ctaPrimary} onPress={() => router.push('/fixtures')}>
-                <Text style={s.ctaPrimaryText}>Predictions</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={s.ctaSecondary} onPress={() => router.push('/(tabs)/my-team')}>
-                <Text style={s.ctaSecondaryText}>{locked ? 'Tokens' : 'Set Lineup'}</Text>
-              </TouchableOpacity>
-            </View>
           </GlassCard>
         ) : (
           <View style={s.seasonOver}>
@@ -325,18 +317,6 @@ const s = StyleSheet.create({
   matchdayLabel: { fontSize: 15, fontWeight: '700', color: T.text, fontFamily: 'Fredoka_700Bold' },
   matchdayDeadline: { fontSize: 13, color: T.accent, fontWeight: '500', fontFamily: 'Fredoka_500Medium' },
   matchdayLocked: { color: T.success },
-  matchdayCtas: { flexDirection: 'row', gap: 8, marginTop: 2 },
-  ctaPrimary: {
-    flex: 1, backgroundColor: T.accent, borderRadius: R.button, paddingVertical: 10, alignItems: 'center',
-    ...buttonShadow,
-  },
-  ctaPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 14, fontFamily: 'Fredoka_600SemiBold' },
-  ctaSecondary: {
-    flex: 1, borderRadius: R.button, paddingVertical: 10, alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(45,212,191,0.4)',
-  },
-  ctaSecondaryText: { color: T.accent, fontWeight: '700', fontSize: 14, fontFamily: 'Fredoka_600SemiBold' },
-
   seasonOver: { padding: 16, alignItems: 'center' },
   seasonOverText: { color: T.textSecondary, fontSize: 14, fontFamily: 'Fredoka_500Medium' },
 

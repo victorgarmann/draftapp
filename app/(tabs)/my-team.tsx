@@ -345,7 +345,7 @@ export default function MyTeamScreen() {
       })}
     >
       <GradientScreen>
-      <View style={styles.contentWrapper}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} scrollEnabled={!dragPlayer}>
       {/* Group picker */}
       <TouchableOpacity style={styles.groupPicker} onPress={() => setPickerOpen(true)}>
         <View style={styles.groupPickerLeft}>
@@ -475,7 +475,7 @@ export default function MyTeamScreen() {
         />
       )}
 
-      </View>
+      </ScrollView>
       </GradientScreen>
 
       {/* Ghost overlay */}
@@ -563,7 +563,7 @@ function SquadTab({
   }
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} scrollEnabled={scrollEnabled}>
+    <View>
       <Text style={styles.formationLabel}>
         {starters.length === 11 ? formationLabel(starters) : `${starters.length}/11 selected`}
       </Text>
@@ -628,7 +628,7 @@ function SquadTab({
           </TouchableOpacity>
         )}
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -646,7 +646,7 @@ function PointsTab({ squadWithPoints }: { squadWithPoints: SquadPlayerWithPoints
   const totalPoints = sorted.reduce((sum, p) => sum + (p.isStarting ? p.totalPoints : 0), 0);
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent}>
+    <View>
       <GlassCard style={styles.totalRow}>
         <Text style={styles.totalLabel}>Starting XI Total</Text>
         <Text style={styles.totalPoints}>{totalPoints} pts</Text>
@@ -672,7 +672,7 @@ function PointsTab({ squadWithPoints }: { squadWithPoints: SquadPlayerWithPoints
         </GlassCard>
       ))}
       <Text style={styles.fotmobCredit}>Ratings powered by FotMob</Text>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -768,7 +768,7 @@ function TokensTab({
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent}>
+    <View>
       {/* Status banner */}
       <View style={[styles.deadlineBanner, canUseTokens ? styles.deadlineBannerActive : styles.deadlineBannerWaiting]}>
         <Ionicons name={canUseTokens ? 'flash' : 'hourglass-outline'} size={22} color={canUseTokens ? '#f39c12' : T.textMuted} />
@@ -1000,7 +1000,7 @@ function TokensTab({
           </View>
         </View>
       </Modal>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -1126,7 +1126,7 @@ function DraggableBenchSpot({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  contentWrapper: { flex: 1, maxWidth: 500, alignSelf: 'center', width: '100%' },
+  squadTabContent: { paddingHorizontal: 16, paddingBottom: 24, gap: 8 },
   emptyTitle: { fontSize: 17, fontFamily: 'Fredoka_700Bold', color: T.text, marginBottom: 6 },
   emptySubtitle: { fontSize: 14, fontFamily: 'Fredoka_500Medium', color: T.textSecondary, textAlign: 'center', paddingHorizontal: 32 },
 

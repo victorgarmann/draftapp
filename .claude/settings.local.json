@@ -28,7 +28,8 @@
       "Bash(env BRAINSTORM_DIR=\"$SCREEN_DIR\" BRAINSTORM_HOST=\"127.0.0.1\" BRAINSTORM_URL_HOST=\"localhost\" node /tmp/brainstorm-server.cjs)",
       "Bash(find /c/Users/victo/OneDrive/Dokumenter/prosjekter/draftapp/app -name \"*.tsx\" -type f -exec wc -l {} +)",
       "Bash(sort -k2)",
-      "Bash(find /c/Users/victo/OneDrive/Dokumenter/prosjekter/draftapp/src/components -name \"*.tsx\" -type f -exec wc -l {} +)"
+      "Bash(find /c/Users/victo/OneDrive/Dokumenter/prosjekter/draftapp/src/components -name \"*.tsx\" -type f -exec wc -l {} +)",
+      "Bash(bash \"/c/Users/victo/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/skills/brainstorming/scripts/start-server.sh\" --project-dir \"C:/Users/victo/OneDrive/Dokumenter/prosjekter/draftapp\")"
     ]
   }
 }
