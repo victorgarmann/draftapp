@@ -1,3 +1,6 @@
+# Superpowers brainstorm sessions
+.superpowers/
+
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
 # dependencies
@@ -31,6 +34,7 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # typescript
@@ -41,3 +45,8 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Firebase secrets
+google-services.json
+GoogleService-Info.plist
+.firebase/
