@@ -335,6 +335,43 @@ export default function MyTeamScreen() {
       })}
     >
       <GradientScreen>
+      {/* Combined deadline + token header — scroll-pinned */}
+      {(() => {
+        const next = getNextMatchday();
+        const locked = isLineupLocked();
+        const diffMs = next ? new Date(next.deadline).getTime() - Date.now() : 0;
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        const deadlineText = !next
+          ? 'Season complete'
+          : locked
+            ? `MD${next.matchday} in progress — lineup locked`
+            : hours < 24
+              ? `Deadline in ${hours}h — save your lineup!`
+              : `MD${next.matchday} deadline: ${new Date(next.deadline).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}`;
+
+        return (
+          <View style={styles.pinnedHeader}>
+            <View style={styles.pinnedDeadline}>
+              <Ionicons
+                name={locked ? 'lock-closed' : (next && hours < 24) ? 'warning-outline' : 'time-outline'}
+                size={12}
+                color={locked ? T.success : (next && hours < 24) ? T.warning : T.accent}
+              />
+              <Text style={styles.pinnedDeadlineText} numberOfLines={1}>{deadlineText}</Text>
+            </View>
+            <View style={styles.pinnedTokens}>
+              {(['nullify', 'double_points', 'bench_boost'] as TokenType[]).map((type) => {
+                const available = tokens.filter((t) => t.tokenType === type && t.usedMatchday === null).length;
+                return (
+                  <TouchableOpacity key={type} onPress={() => setActiveTab('tokens')} activeOpacity={0.8}>
+                    <TokenCoin type={type} size={32} count={available} dimmed={available === 0} />
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        );
+      })()}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} scrollEnabled={!dragPlayer}>
       {/* Group picker */}
       <TouchableOpacity style={styles.groupPicker} onPress={() => setPickerOpen(true)}>
@@ -347,52 +384,6 @@ export default function MyTeamScreen() {
         </View>
         <Text style={styles.chevron}>▾</Text>
       </TouchableOpacity>
-
-      {/* Lineup deadline banner */}
-      {(() => {
-        const next = getNextMatchday();
-        if (!next) return null;
-        const locked = isLineupLocked();
-        const diffMs = new Date(next.deadline).getTime() - Date.now();
-        const hours = Math.floor(diffMs / (1000 * 60 * 60));
-        return (
-          <View style={[styles.deadlineStrip, locked ? styles.deadlineStripLocked : undefined, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }]}>
-            {locked
-              ? <Ionicons name="lock-closed" size={13} color={T.success} />
-              : hours < 24
-                ? <Ionicons name="warning-outline" size={13} color={T.warning} />
-                : <Ionicons name="time-outline" size={13} color={T.accent} />}
-            <Text style={styles.deadlineStripText}>
-              {locked
-                ? `Lineup locked · MD${next.matchday} in progress`
-                : hours < 24
-                  ? `Deadline in ${hours}h — save your lineup!`
-                  : `MD${next.matchday} deadline: ${new Date(next.deadline).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}`}
-            </Text>
-          </View>
-        );
-      })()}
-
-      {/* Token tray */}
-      <View style={styles.tokenTray}>
-        {(['nullify', 'double_points', 'bench_boost'] as TokenType[]).map((type) => {
-          const available = tokens.filter((t) => t.tokenType === type && t.usedMatchday === null).length;
-          const meta = TOKEN_META[type];
-          return (
-            <TouchableOpacity
-              key={type}
-              style={styles.tokenTrayItem}
-              onPress={() => setActiveTab('tokens')}
-              activeOpacity={0.8}
-            >
-              <TokenCoin type={type} size={52} count={available} dimmed={available === 0} />
-              <Text style={[styles.tokenTrayLabel, available === 0 && styles.tokenTrayLabelEmpty]}>
-                {meta.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
 
       {/* Tab bar */}
       <View style={styles.tabBar}>
@@ -1210,23 +1201,16 @@ const styles = StyleSheet.create({
   playerRowPointsZero: { color: T.textMuted },
   fotmobCredit: { fontSize: 10, fontFamily: 'Fredoka_400Regular', color: T.textSecondary, textAlign: 'center', marginTop: 16, marginBottom: 4 },
 
-  // Token tray
-  tokenTray: {
-    flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 14,
+  // Pinned header (deadline + tokens)
+  pinnedHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 10,
     borderBottomWidth: 1, borderBottomColor: T.glassBorder,
-    justifyContent: 'space-around',
+    backgroundColor: T.bgGradientStart,
   },
-  tokenTrayItem: { alignItems: 'center', gap: 6 },
-  tokenTrayLabel: { fontSize: 10, fontFamily: 'Fredoka_700Bold', color: T.text, textTransform: 'uppercase', letterSpacing: 0.5 },
-  tokenTrayLabelEmpty: { color: T.textMuted },
-
-  // Deadline strip
-  deadlineStrip: {
-    backgroundColor: 'rgba(61,133,247,0.1)', paddingHorizontal: 16, paddingVertical: 8,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(61,133,247,0.2)',
-  },
-  deadlineStripLocked: { backgroundColor: 'rgba(231,76,60,0.1)', borderBottomColor: 'rgba(231,76,60,0.2)' },
-  deadlineStripText: { fontSize: 12, fontFamily: 'Fredoka_500Medium', color: T.textSecondary, textAlign: 'center' },
+  pinnedDeadline: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },
+  pinnedDeadlineText: { fontSize: 12, fontFamily: 'Fredoka_500Medium', color: T.textSecondary, flexShrink: 1 },
+  pinnedTokens: { flexDirection: 'row', gap: 8, alignItems: 'center' },
 
   // Tokens tab
   tokenSectionLabel: { fontSize: 11, fontFamily: 'Fredoka_700Bold', color: T.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8, marginTop: 4 },
