@@ -164,7 +164,7 @@ export default function MyTeamScreen() {
       setDetailRatings(ratings);
       setDetailOwner(owner);
     } catch {
-      setDetailRatings([]);
+      // retain last-known state
     } finally {
       setDetailLoading(false);
     }

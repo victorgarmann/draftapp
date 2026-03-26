@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -89,8 +90,14 @@ export default function HomeScreen() {
 
   async function onRefresh() {
     setRefreshing(true);
-    await load();
-    setRefreshing(false);
+    try {
+      await load();
+    } catch {
+      Alert.alert("Couldn't refresh", "Check your connection.");
+      // retain last-known state
+    } finally {
+      setRefreshing(false);
+    }
   }
 
   if (loading) {
