@@ -77,6 +77,8 @@ export function PlayerDetailSheet({
                 </View>
               </View>
 
+              <Text style={s.fotmobCredit}>Ratings powered by FotMob</Text>
+
               {/* Rating history */}
               <Text style={s.sectionLabel}>MATCHDAY HISTORY</Text>
               {loading ? (
@@ -107,7 +109,6 @@ export function PlayerDetailSheet({
                       </View>
                     );
                   })}
-                  <Text style={s.fotmobCredit}>Ratings powered by FotMob</Text>
                 </ScrollView>
               )}
             </>
@@ -155,5 +156,5 @@ const s = StyleSheet.create({
   ratingScore: { fontSize: 15, fontWeight: '700', fontFamily: 'Fredoka_700Bold', color: T.text },
   ratingPts:   { fontSize: 13, fontWeight: '600', fontFamily: 'Fredoka_500Medium', color: T.success, minWidth: 44, textAlign: 'right' },
   dnp:         { fontSize: 12, fontFamily: 'Fredoka_500Medium', color: T.textMuted, fontStyle: 'italic' },
-  fotmobCredit: { fontSize: 10, fontFamily: 'Fredoka_500Medium', color: T.textMuted, textAlign: 'center', marginTop: 12, marginBottom: 4 },
+  fotmobCredit: { fontSize: 10, fontFamily: 'Fredoka_500Medium', color: T.textSecondary, textAlign: 'center', marginTop: 8, marginBottom: 8 },
 });

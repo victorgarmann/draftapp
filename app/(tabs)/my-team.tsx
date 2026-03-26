@@ -1208,7 +1208,7 @@ const styles = StyleSheet.create({
   benchBadge: { fontSize: 10, fontFamily: 'Fredoka_700Bold', color: T.textMuted, letterSpacing: 0.5 },
   playerRowPoints: { fontSize: 16, fontFamily: 'Fredoka_700Bold', color: T.accent, minWidth: 52, textAlign: 'right' },
   playerRowPointsZero: { color: T.textMuted },
-  fotmobCredit: { fontSize: 10, fontFamily: 'Fredoka_400Regular', color: T.textMuted, textAlign: 'center', marginTop: 16, marginBottom: 4 },
+  fotmobCredit: { fontSize: 10, fontFamily: 'Fredoka_400Regular', color: T.textSecondary, textAlign: 'center', marginTop: 16, marginBottom: 4 },
 
   // Token tray
   tokenTray: {
