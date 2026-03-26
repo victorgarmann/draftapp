@@ -4,7 +4,7 @@
 import { createClient } from '@supabase/supabase-js';
 import env from '@/config/env';
 import { supabase } from '@/lib/supabase';
-import { MATCHDAY_SCHEDULE, seedMockRatings } from '@/services/rating.service';
+import { seedMockRatings } from '@/services/rating.service';
 import { ensureLineupSnapshots } from '@/services/draft.service';
 import { calculateGroupScores } from '@/services/rating.service';
 
@@ -148,11 +148,15 @@ async function seedMainGroup(currentUserId: string): Promise<void> {
   const allMemberIds = [currentUserId, ...DEMO_FAKE_USERS.map((u) => u.id)];
 
   // 2. Clean up existing data for this group
-  await adminSupabase.from('draft_picks').delete().eq('group_id', DEMO_MAIN_GROUP_ID);
-  await adminSupabase.from('tokens').delete().eq('group_id', DEMO_MAIN_GROUP_ID);
-  await adminSupabase.from('predictions').delete().eq('group_id', DEMO_MAIN_GROUP_ID);
+  const { error: d1 } = await adminSupabase.from('draft_picks').delete().eq('group_id', DEMO_MAIN_GROUP_ID);
+  if (d1) throw new Error(`Cleanup draft_picks failed: ${d1.message}`);
+  const { error: d2 } = await adminSupabase.from('tokens').delete().eq('group_id', DEMO_MAIN_GROUP_ID);
+  if (d2) throw new Error(`Cleanup tokens failed: ${d2.message}`);
+  const { error: d3 } = await adminSupabase.from('predictions').delete().eq('group_id', DEMO_MAIN_GROUP_ID);
+  if (d3) throw new Error(`Cleanup predictions failed: ${d3.message}`);
   for (const uid of allMemberIds) {
-    await adminSupabase.from('squads').delete().eq('group_id', DEMO_MAIN_GROUP_ID).eq('user_id', uid);
+    const { error: d4 } = await adminSupabase.from('squads').delete().eq('group_id', DEMO_MAIN_GROUP_ID).eq('user_id', uid);
+    if (d4) throw new Error(`Cleanup squads failed for ${uid}: ${d4.message}`);
   }
 
   // 3. Upsert group members
@@ -268,10 +272,11 @@ async function seedQuickDraftGroup(currentUserId: string): Promise<void> {
   if (gErr) throw new Error(`Quick Draft group upsert failed: ${gErr.message}`);
 
   // 2. Upsert members
-  await adminSupabase.from('group_members').upsert([
+  const { error: mErr2 } = await adminSupabase.from('group_members').upsert([
     { group_id: DEMO_DRAFT_GROUP_ID, user_id: currentUserId, draft_position: 1, total_points: 0 },
     { group_id: DEMO_DRAFT_GROUP_ID, user_id: fakeUserId,    draft_position: 2, total_points: 0 },
   ], { onConflict: 'group_id,user_id' });
+  if (mErr2) throw new Error(`Quick Draft members upsert failed: ${mErr2.message}`);
 
   // 3. Clean existing picks
   await adminSupabase.from('draft_picks').delete().eq('group_id', DEMO_DRAFT_GROUP_ID);
