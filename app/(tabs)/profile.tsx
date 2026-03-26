@@ -89,25 +89,16 @@ export default function ProfileScreen() {
             accent
           />
           <StatTile
-            label="Groups"
+            label="Groups Played"
             value={statsLoading ? '…' : String(stats?.groupCount ?? 0)}
           />
           <StatTile
-            label="Predictions"
-            value={statsLoading ? '…' : `${stats?.predictionsCorrect ?? 0}/${stats?.predictionsTotal ?? 0}`}
-            sub="correct"
-          />
-          <StatTile
-            label="Win Rate"
+            label="Prediction Accuracy"
             value={statsLoading ? '…' : winRate !== null ? `${winRate}%` : '—'}
           />
           <StatTile
             label="Tokens Earned"
             value={statsLoading ? '…' : String(stats?.tokensEarned ?? 0)}
-          />
-          <StatTile
-            label="Tokens Used"
-            value={statsLoading ? '…' : String(stats?.tokensUsed ?? 0)}
           />
         </View>
 
@@ -217,7 +208,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, gap: 10, marginBottom: 28,
   },
   statTile: {
-    flex: 1, minWidth: '28%',
+    flex: 1, width: '48%',
     backgroundColor: T.surface, borderRadius: R.card,
     paddingVertical: 16, paddingHorizontal: 12,
     alignItems: 'center', gap: 2,
