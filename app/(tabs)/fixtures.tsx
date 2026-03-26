@@ -204,6 +204,7 @@ function PredictTab({
   onSave: (f: MatchdayFixture) => void;
   onResolve: (md: number) => void;
 }) {
+  const [tokenGuideOpen, setTokenGuideOpen] = useState(false);
   const allMds = [...upcomingMds, ...pastMds.slice(0, 3)].sort((a, b) => b.matchday - a.matchday);
   const activeMdInfo = MATCHDAY_SCHEDULE.find((md) => md.matchday === selectedMd);
   const activeFixtures = selectedMd ? (byMatchday.get(selectedMd) ?? []) : [];
@@ -212,22 +213,26 @@ function PredictTab({
 
   return (
     <ScrollView contentContainerStyle={s.scroll}>
-      {/* Token guide */}
-      <Text style={s.sectionLabel}>HOW TOKENS WORK</Text>
-      <GlassCard style={s.tokenGuide}>
-        {(Object.keys(TOKEN_META) as TokenType[]).map((type) => {
-          const meta = TOKEN_META[type];
-          return (
-            <View key={type} style={s.tokenGuideRow}>
-              <TokenCoin type={type} size={52} />
-              <View style={s.tokenGuideText}>
-                <Text style={[s.tokenGuideLabel, { color: meta.color }]}>{meta.label}</Text>
-                <Text style={s.tokenGuideDesc}>{meta.description}</Text>
+      {/* Token guide — collapsible */}
+      <TouchableOpacity style={s.tokenGuideToggle} onPress={() => setTokenGuideOpen((v) => !v)} activeOpacity={0.7}>
+        <Text style={s.tokenGuideToggleText}>How tokens work {tokenGuideOpen ? '▴' : '▾'}</Text>
+      </TouchableOpacity>
+      {tokenGuideOpen && (
+        <GlassCard style={s.tokenGuide}>
+          {(Object.keys(TOKEN_META) as TokenType[]).map((type) => {
+            const meta = TOKEN_META[type];
+            return (
+              <View key={type} style={s.tokenGuideRow}>
+                <TokenCoin type={type} size={52} />
+                <View style={s.tokenGuideText}>
+                  <Text style={[s.tokenGuideLabel, { color: meta.color }]}>{meta.label}</Text>
+                  <Text style={s.tokenGuideDesc}>{meta.description}</Text>
+                </View>
               </View>
-            </View>
-          );
-        })}
-      </GlassCard>
+            );
+          })}
+        </GlassCard>
+      )}
 
       {/* Matchday selector */}
       <Text style={s.sectionLabel}>SELECT MATCHDAY</Text>
@@ -508,6 +513,12 @@ const s = StyleSheet.create({
   noData: { fontSize: 13, color: T.textMuted, fontFamily: 'Fredoka_500Medium', fontStyle: 'italic', paddingVertical: 8 },
 
   // Token guide
+  tokenGuideToggle: {
+    marginHorizontal: 16, marginBottom: 10, paddingVertical: 6,
+  },
+  tokenGuideToggleText: {
+    fontSize: 13, fontFamily: 'Fredoka_500Medium', color: T.textSecondary,
+  },
   tokenGuide: { overflow: 'hidden', padding: 0 },
   tokenGuideRow: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 12, padding: 14,
