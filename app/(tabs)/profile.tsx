@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, gap: 10, marginBottom: 28,
   },
   statTile: {
-    flex: 1, width: '48%',
+    flexBasis: '48%', flexGrow: 0,
     backgroundColor: T.surface, borderRadius: R.card,
     paddingVertical: 16, paddingHorizontal: 12,
     alignItems: 'center', gap: 2,
