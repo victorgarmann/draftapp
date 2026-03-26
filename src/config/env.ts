@@ -2,6 +2,7 @@ const env = {
   supabase: {
     url: process.env.EXPO_PUBLIC_SUPABASE_URL ?? '',
     anonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
+    serviceRoleKey: process.env.EXPO_PUBLIC_SUPABASE_SERVICE_ROLE_KEY ?? '',
   },
   firebase: {
     apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? '',

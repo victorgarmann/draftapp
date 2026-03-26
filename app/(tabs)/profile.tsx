@@ -13,6 +13,7 @@ import { router } from 'expo-router';
 import { useAuth } from '@/contexts/auth-context';
 import { getProfileStats, type ProfileStats } from '@/services/profile.service';
 import { Avatar } from '@/components/avatar';
+import { seedDemoData } from '@/services/demo.service';
 import { T, R } from '@/constants/theme';
 import { GradientScreen } from '@/components/gradient-screen';
 import { GlassCard } from '@/components/glass-card';
@@ -50,6 +51,28 @@ export default function ProfileScreen() {
     }
   }
 
+  async function handleDemoSeed() {
+    if (!user) return;
+    Alert.alert(
+      'Reset demo data?',
+      'This will overwrite demo group data.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          onPress: async () => {
+            try {
+              await seedDemoData(user.uid);
+              Alert.alert('Done', 'Demo data seeded successfully.');
+            } catch (e: any) {
+              Alert.alert('Error', e.message ?? 'Seed failed.');
+            }
+          },
+        },
+      ],
+    );
+  }
+
   async function handleSignOut() {
     setSigningOut(true);
     try {
@@ -69,14 +92,19 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         {/* Avatar */}
         <View style={styles.avatarSection}>
-          <View style={{ marginBottom: 14 }}>
+          <TouchableOpacity
+            onLongPress={handleDemoSeed}
+            delayLongPress={3000}
+            activeOpacity={1}
+            style={{ marginBottom: 14 }}
+          >
             <Avatar
               username={profile?.username ?? user?.email ?? '?'}
               size={84}
               variant="accent"
               border
             />
-          </View>
+          </TouchableOpacity>
           <Text style={styles.username}>{profile?.username ?? '—'}</Text>
           <Text style={styles.email}>{user?.email ?? ''}</Text>
         </View>
