@@ -371,15 +371,17 @@ export default function GroupDetailScreen() {
           <>
             <Text style={s.sectionTitle}>Group Settings</Text>
             <GlassCard style={s.settingsCard}>
-              <Text style={s.settingsLabel}>Color</Text>
-              <View style={s.colorRow}>
-                {GROUP_COLORS.map((c) => (
-                  <TouchableOpacity
-                    key={c}
-                    style={[s.colorSwatch, { backgroundColor: c }, group.color === c && s.colorSwatchActive]}
-                    onPress={() => handleColorChange(c)}
-                  />
-                ))}
+              <View style={s.settingsRow}>
+                <Text style={s.settingsRowLabel}>Color</Text>
+                <View style={s.colorRowInline}>
+                  {GROUP_COLORS.map((c) => (
+                    <TouchableOpacity
+                      key={c}
+                      style={[s.colorSwatchSmall, { backgroundColor: c }, group.color === c && s.colorSwatchActive]}
+                      onPress={() => handleColorChange(c)}
+                    />
+                  ))}
+                </View>
               </View>
               <View style={s.settingsDivider} />
               <TouchableOpacity style={s.settingsRow} onPress={handleTokensToggle}>
@@ -743,9 +745,8 @@ const s = StyleSheet.create({
   settingsCard: {
     gap: 12, marginBottom: 16,
   },
-  settingsLabel: { fontSize: 11, fontFamily: 'Fredoka_600SemiBold', color: T.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 },
-  colorRow: { flexDirection: 'row', gap: 12 },
-  colorSwatch: { width: 32, height: 32, borderRadius: 16 },
+  colorRowInline: { flexDirection: 'row', gap: 6, alignItems: 'center' },
+  colorSwatchSmall: { width: 18, height: 18, borderRadius: 9 },
   colorSwatchActive: { borderWidth: 3, borderColor: '#fff' },
   settingsDivider: { height: 1, backgroundColor: T.glassBorder },
   settingsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
