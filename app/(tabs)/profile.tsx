@@ -9,12 +9,9 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/auth-context';
 import { getProfileStats, type ProfileStats } from '@/services/profile.service';
-import { seedAllRealData, isRealDataSeeded } from '@/services/real-data.service';
-import env from '@/config/env';
 import { Avatar } from '@/components/avatar';
 import { T, R } from '@/constants/theme';
 import { GradientScreen } from '@/components/gradient-screen';
@@ -28,35 +25,13 @@ export default function ProfileScreen() {
   const [savingUsername,  setSavingUsername]  = useState(false);
   const [stats,         setStats]         = useState<ProfileStats | null>(null);
   const [statsLoading,  setStatsLoading]  = useState(true);
-  const [seeding,       setSeeding]       = useState(false);
-  const [seedLog,       setSeedLog]       = useState<string[]>([]);
-  const [realDataReady, setRealDataReady] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!user) return;
     getProfileStats(user.uid)
       .then(setStats)
       .finally(() => setStatsLoading(false));
-    isRealDataSeeded().then(setRealDataReady);
   }, [user]);
-
-  async function handleSeedRealData() {
-    const apiKey = env.footballData.apiKey;
-    if (!apiKey) {
-      setSeedLog(['No API key set. Add EXPO_PUBLIC_FOOTBALL_DATA_KEY to your .env file.', 'Get a free key at football-data.org/client/register']);
-      return;
-    }
-    setSeeding(true);
-    setSeedLog(['Starting…']);
-    try {
-      await seedAllRealData(apiKey, (msg) => setSeedLog((prev) => [...prev.slice(-19), msg]));
-      setRealDataReady(true);
-    } catch (e: any) {
-      setSeedLog((prev) => [...prev, `Error: ${e.message}`]);
-    } finally {
-      setSeeding(false);
-    }
-  }
 
   async function handleSaveUsername() {
     const trimmed = newUsername.trim();
@@ -178,44 +153,6 @@ export default function ProfileScreen() {
           <Row label="Member since" value={profile ? formatDate(profile.createdAt) : '—'} />
         </GlassCard>
 
-        {/* CL Data seeding */}
-        <SectionLabel>Real CL Data</SectionLabel>
-        <GlassCard style={styles.seedCard}>
-          <View style={styles.seedStatus}>
-            <View style={[styles.seedDot, { backgroundColor: realDataReady ? T.success : T.warning }]} />
-            <Text style={styles.seedStatusText}>
-              {realDataReady === null ? 'Checking…'
-                : realDataReady ? 'Real CL data loaded'
-                : 'Using mock data'}
-            </Text>
-          </View>
-          <Text style={styles.seedHint}>
-            Seeds all CL 2025/26 squads + fixtures from football-data.org.{'\n'}
-            Requires a free API key — takes ~4 min (rate limit).
-          </Text>
-          <TouchableOpacity
-            style={[styles.seedBtn, seeding && styles.seedBtnDisabled]}
-            onPress={handleSeedRealData}
-            disabled={seeding}
-          >
-            {seeding
-              ? <ActivityIndicator color="#fff" size="small" />
-              : <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Ionicons name={realDataReady ? 'refresh' : 'download-outline'} size={14} color="#fff" />
-                <Text style={styles.seedBtnText}>
-                  {realDataReady ? 'Re-seed CL Data' : 'Seed Real CL Data'}
-                </Text>
-              </View>}
-          </TouchableOpacity>
-          {seedLog.length > 0 && (
-            <ScrollView style={styles.seedLog} nestedScrollEnabled>
-              {seedLog.map((line, i) => (
-                <Text key={i} style={styles.seedLogLine}>{line}</Text>
-              ))}
-            </ScrollView>
-          )}
-        </GlassCard>
-
         {/* Sign out */}
         <TouchableOpacity
           style={[styles.signOutBtn, signingOut && styles.signOutBtnDisabled]}
@@ -324,26 +261,6 @@ const styles = StyleSheet.create({
   editAction: { paddingHorizontal: 4 },
   editSave: { color: T.accent, fontFamily: 'Fredoka_700Bold', fontSize: 14 },
   editCancel: { color: T.textMuted, fontSize: 14, fontFamily: 'Fredoka_500Medium' },
-
-  seedCard: {
-    marginHorizontal: 16, marginBottom: 24,
-    gap: 12,
-  },
-  seedStatus:     { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  seedDot:        { width: 8, height: 8, borderRadius: 4 },
-  seedStatusText: { fontSize: 14, fontFamily: 'Fredoka_600SemiBold', color: T.text },
-  seedHint:       { fontSize: 12, color: T.textSecondary, lineHeight: 18, fontFamily: 'Fredoka_500Medium' },
-  seedBtn: {
-    backgroundColor: T.accent, borderRadius: R.button,
-    paddingVertical: 12, alignItems: 'center',
-  },
-  seedBtnDisabled: { opacity: 0.6 },
-  seedBtnText:    { color: '#fff', fontFamily: 'Fredoka_600SemiBold', fontSize: 14 },
-  seedLog: {
-    backgroundColor: '#0d0d1a', borderRadius: R.chip,
-    padding: 10, maxHeight: 160,
-  },
-  seedLogLine: { fontSize: 11, color: '#6ee7b7', fontFamily: 'monospace', lineHeight: 18 },
 
   signOutBtn: {
     marginHorizontal: 16, borderRadius: R.button,
