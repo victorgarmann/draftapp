@@ -453,7 +453,7 @@ export default function GroupDetailScreen() {
       {/* Floating action button */}
       {(draftLive || canStartDraft || canStartRound2) && (
         <View style={s.fabWrap} >
-          {canStartRound2 && (
+          {false && canStartRound2 && (
             <TouchableOpacity
               style={[s.fab, { backgroundColor: accent, shadowColor: accent }, starting && s.fabDisabled]}
               disabled={starting}

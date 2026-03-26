@@ -37,7 +37,6 @@ import {
 } from '@/services/prediction.service';
 import { getNextMatchday, isLineupLocked, getPlayerRatings, type PlayerRating } from '@/services/rating.service';
 import { PlayerDetailSheet } from '@/components/player-detail-sheet';
-import { scheduleDeadlineReminders } from '@/services/notification.service';
 import { FormationField, type SpotLayout } from '@/components/formation-field';
 import { JerseyIcon } from '@/components/jersey-icon';
 import { TokenCoin } from '@/components/token-coin';
@@ -129,15 +128,6 @@ export default function MyTeamScreen() {
   }, [user, selectedGroup]);
 
   useEffect(() => { loadSquad(); }, [loadSquad]);
-
-  // Schedule deadline reminder whenever a group is active
-  useEffect(() => {
-    if (!selectedGroup) return;
-    const next = getNextMatchday();
-    if (next) {
-      scheduleDeadlineReminders(next.deadline, next.label);
-    }
-  }, [selectedGroup?.id]);
 
   // Derived
   const starters = editing

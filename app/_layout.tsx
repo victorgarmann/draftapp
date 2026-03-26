@@ -7,13 +7,12 @@ import { useFonts, Fredoka_400Regular, Fredoka_500Medium, Fredoka_600SemiBold, F
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/contexts/auth-context';
-import { requestNotificationPermissions } from '@/services/notification.service';
 import { T } from '@/constants/theme';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
-  const { isLoading, user } = useAuth();
+  const { isLoading } = useAuth();
   const [fontsLoaded] = useFonts({
     Fredoka_400Regular,
     Fredoka_500Medium,
@@ -26,12 +25,6 @@ function RootLayoutNav() {
       SplashScreen.hideAsync();
     }
   }, [isLoading, fontsLoaded]);
-
-  useEffect(() => {
-    if (!isLoading && user) {
-      requestNotificationPermissions();
-    }
-  }, [isLoading, user]);
 
   if (!fontsLoaded) return null;
 
