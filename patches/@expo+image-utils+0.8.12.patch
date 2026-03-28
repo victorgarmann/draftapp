@@ -1,0 +1,38 @@
+diff --git a/node_modules/@expo/image-utils/build/Cache.js b/node_modules/@expo/image-utils/build/Cache.js
+index 85adb45..641345c 100644
+--- a/node_modules/@expo/image-utils/build/Cache.js
++++ b/node_modules/@expo/image-utils/build/Cache.js
+@@ -11,8 +11,9 @@ exports.cacheImageAsync = cacheImageAsync;
+ exports.clearUnusedCachesAsync = clearUnusedCachesAsync;
+ const crypto_1 = __importDefault(require("crypto"));
+ const fs_1 = __importDefault(require("fs"));
++const os_1 = require("os");
+ const path_1 = require("path");
+-const CACHE_LOCATION = '.expo/web/cache/production/images';
++const CACHE_LOCATION = (0, path_1.join)((0, os_1.tmpdir)(), 'expo-image-cache');
+ const cacheKeys = {};
+ // Calculate SHA256 Checksum value of a file based on its contents
+ function calculateHash(filePath) {
+@@ -35,8 +36,8 @@ async function createCacheKeyWithDirectoryAsync(projectRoot, type, icon) {
+     }
+     return cacheKey;
+ }
+-async function ensureCacheDirectory(projectRoot, type, cacheKey) {
+-    const cacheFolder = (0, path_1.join)(projectRoot, CACHE_LOCATION, type, cacheKey);
++async function ensureCacheDirectory(_projectRoot, type, cacheKey) {
++    const cacheFolder = (0, path_1.join)(CACHE_LOCATION, type, cacheKey);
+     await fs_1.default.promises.mkdir(cacheFolder, { recursive: true });
+     return cacheFolder;
+ }
+@@ -56,9 +57,9 @@ async function cacheImageAsync(fileName, buffer, cacheKey) {
+         console.warn(`Error caching image: "${fileName}". ${error.message}`);
+     }
+ }
+-async function clearUnusedCachesAsync(projectRoot, type) {
++async function clearUnusedCachesAsync(_projectRoot, type) {
+     // Clean up any old caches
+-    const cacheFolder = (0, path_1.join)(projectRoot, CACHE_LOCATION, type);
++    const cacheFolder = (0, path_1.join)(CACHE_LOCATION, type);
+     await fs_1.default.promises.mkdir(cacheFolder, { recursive: true });
+     const currentCaches = await fs_1.default.promises.readdir(cacheFolder);
+     if (!Array.isArray(currentCaches)) {
