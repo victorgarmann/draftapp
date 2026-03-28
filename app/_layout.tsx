@@ -8,8 +8,18 @@ import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/contexts/auth-context';
 import { T } from '@/constants/theme';
+import { Alert } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
+
+// Temporary: surface JS crashes as an Alert so we can diagnose TestFlight crashes
+if (typeof ErrorUtils !== 'undefined') {
+  const originalHandler = ErrorUtils.getGlobalHandler();
+  ErrorUtils.setGlobalHandler((error, isFatal) => {
+    Alert.alert('Crash', `${error?.message}\n\n${error?.stack?.slice(0, 500)}`);
+    originalHandler?.(error, isFatal);
+  });
+}
 
 function RootLayoutNav() {
   const { isLoading } = useAuth();
