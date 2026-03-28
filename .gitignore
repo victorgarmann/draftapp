@@ -7,10 +7,7 @@
 node_modules/
 
 # Expo
-.expo/web/cache/
-.expo/cache/
-.expo/devices.json
-.expo/types/
+.expo/
 dist/
 web-build/
 expo-env.d.ts
