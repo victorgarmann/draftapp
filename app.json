@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.fotdraft",
-      "googleServicesFile": "./GoogleService-Info.plist",
+      "googleServicesFile": "$GOOGLE_SERVICES_INFO_PLIST",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
