@@ -15,8 +15,13 @@ import env from '@/config/env';
 
 let GoogleSignin: typeof import('@react-native-google-signin/google-signin').GoogleSignin | null = null;
 if (Platform.OS !== 'web') {
-  GoogleSignin = require('@react-native-google-signin/google-signin').GoogleSignin;
-  GoogleSignin.configure({ webClientId: env.googleWebClientId });
+  try {
+    GoogleSignin = require('@react-native-google-signin/google-signin').GoogleSignin;
+    GoogleSignin.configure({ webClientId: env.googleWebClientId });
+  } catch (e) {
+    console.warn('GoogleSignin init failed:', e);
+    GoogleSignin = null;
+  }
 }
 
 export interface UserProfile {
@@ -64,8 +69,9 @@ export async function signInWithGoogle() {
     const provider = new GoogleAuthProvider();
     result = await signInWithPopup(auth, provider);
   } else {
-    await GoogleSignin!.hasPlayServices();
-    const { data } = await GoogleSignin!.signIn();
+    if (!GoogleSignin) throw new Error('Google Sign-In is not available on this device.');
+    await GoogleSignin.hasPlayServices();
+    const { data } = await GoogleSignin.signIn();
     const credential = GoogleAuthProvider.credential(data?.idToken ?? null);
     result = await signInWithCredential(auth, credential);
   }

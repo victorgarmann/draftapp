@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "fotdraft",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.fotdraft",
@@ -33,7 +33,6 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "@react-native-google-signin/google-signin",
       "expo-router",
       [
         "expo-splash-screen",
