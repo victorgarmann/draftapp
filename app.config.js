@@ -2,17 +2,24 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-// On EAS builds, GoogleService-Info.plist is stored as a base64 env var
-// and decoded to a temp file at build time.
-function resolveGoogleServicesFile() {
+function resolveIosGoogleServicesFile() {
   const b64 = process.env.GOOGLE_SERVICES_INFO_PLIST_BASE64;
   if (b64) {
     const tmpPath = path.join(os.tmpdir(), 'GoogleService-Info.plist');
     fs.writeFileSync(tmpPath, Buffer.from(b64, 'base64'));
     return tmpPath;
   }
-  // Local development fallback
   return './GoogleService-Info.plist';
+}
+
+function resolveAndroidGoogleServicesFile() {
+  const b64 = process.env.GOOGLE_SERVICES_JSON_BASE64;
+  if (b64) {
+    const tmpPath = path.join(os.tmpdir(), 'google-services.json');
+    fs.writeFileSync(tmpPath, Buffer.from(b64, 'base64'));
+    return tmpPath;
+  }
+  return './google-services.json';
 }
 
 module.exports = ({ config }) => {
@@ -20,7 +27,11 @@ module.exports = ({ config }) => {
     ...config,
     ios: {
       ...config.ios,
-      googleServicesFile: resolveGoogleServicesFile(),
+      googleServicesFile: resolveIosGoogleServicesFile(),
+    },
+    android: {
+      ...config.android,
+      googleServicesFile: resolveAndroidGoogleServicesFile(),
     },
   };
 };
