@@ -8,21 +8,13 @@ import {
   signInWithPopup,
   type User,
 } from 'firebase/auth';
-import { Platform } from 'react-native';
 import { auth } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase';
 import env from '@/config/env';
 
-let GoogleSignin: typeof import('@react-native-google-signin/google-signin').GoogleSignin | null = null;
-if (Platform.OS !== 'web') {
-  try {
-    GoogleSignin = require('@react-native-google-signin/google-signin').GoogleSignin;
-    GoogleSignin.configure({ webClientId: env.googleWebClientId });
-  } catch (e) {
-    console.warn('GoogleSignin init failed:', e);
-    GoogleSignin = null;
-  }
-}
+// Google Sign-In native module removed — plugin not configured for this build.
+// signInWithGoogle() will throw on native until re-integrated.
+const GoogleSignin: null = null;
 
 export interface UserProfile {
   id: string;
