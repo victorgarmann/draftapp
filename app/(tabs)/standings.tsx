@@ -28,6 +28,7 @@ import { SkeletonBox } from '@/components/skeleton';
 import { EmptyState } from '@/components/empty-state';
 import { GradientScreen } from '@/components/gradient-screen';
 import { GlassCard } from '@/components/glass-card';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { T, R, heroShadow } from '@/constants/theme';
 
 type SubTab = 'overall' | 'matchday';
@@ -42,6 +43,7 @@ function rankColor(rank: number): string {
 const PAST_MDS = MATCHDAY_SCHEDULE.filter((md) => new Date(md.date) < new Date());
 
 export default function StandingsScreen() {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [groups,         setGroups]         = useState<GroupDetail[]>([]);
   const [selectedGroup,  setSelectedGroup]  = useState<GroupDetail | null>(null);
@@ -147,7 +149,7 @@ export default function StandingsScreen() {
     <GradientScreen>
       {/* Group picker */}
       <TouchableOpacity onPress={() => setPickerOpen(true)}>
-        <GlassCard style={s.groupPicker}>
+        <GlassCard style={[s.groupPicker, { marginTop: insets.top + 16 }]}>
           <View style={s.groupPickerLeft}>
             {selectedGroup && <View style={[s.groupColorDot, { backgroundColor: selectedGroup.color }]} />}
             <View>
@@ -427,13 +429,13 @@ const s = StyleSheet.create({
 
   groupPicker: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    margin: 16, padding: 16,
+    marginHorizontal: 16, marginBottom: 16, padding: 18,
   },
-  groupPickerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  groupColorDot: { width: 12, height: 12, borderRadius: 6 },
-  groupPickerLabel: { fontSize: 11, color: T.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2, fontFamily: 'Fredoka_500Medium' },
-  groupPickerName:  { fontSize: 16, fontWeight: '700', color: T.text, fontFamily: 'Fredoka_700Bold' },
-  chevron: { fontSize: 18, color: T.textSecondary },
+  groupPickerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  groupColorDot: { width: 16, height: 16, borderRadius: 8 },
+  groupPickerLabel: { fontSize: 11, color: T.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3, fontFamily: 'Fredoka_500Medium' },
+  groupPickerName:  { fontSize: 18, fontWeight: '700', color: T.text, fontFamily: 'Fredoka_700Bold' },
+  chevron: { fontSize: 20, color: T.textSecondary },
 
   subTabRow: {
     flexDirection: 'row', alignItems: 'center',

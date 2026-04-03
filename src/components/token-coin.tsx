@@ -6,8 +6,8 @@ import { T } from '@/constants/theme';
 
 const SYMBOLS: Record<TokenType, string> = {
   nullify:       '✕',
-  double_points: '⚡',
-  bench_boost:   '⬆',
+  double_points: '×2',
+  bench_boost:   '▲',
 };
 
 interface TokenCoinProps {
@@ -57,7 +57,7 @@ export function TokenCoin({ type, size = 72, count, dimmed = false }: TokenCoinP
             borderColor: color + '50',
           }}>
             <Text style={{
-              fontSize: Math.round(faceSize * 0.46),
+              fontSize: Math.round(faceSize * (SYMBOLS[type].length > 1 ? 0.34 : 0.46)),
               color: color,
               fontWeight: '900',
               includeFontPadding: false,

@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { seedMockRatings } from '@/services/rating.service';
 import { ensureLineupSnapshots } from '@/services/draft.service';
 import { calculateGroupScores } from '@/services/rating.service';
+import { seedMatchdayFixtures, seedWCMatches } from '@/services/prediction.service';
 
 // Admin client bypasses RLS — used ONLY for fake profile creation + demo seeding
 const adminSupabase = createClient(env.supabase.url, env.supabase.serviceRoleKey);
@@ -18,8 +19,8 @@ export const DEMO_FAKE_USERS = [
   { id: '00000000-0000-0000-0000-000000000003', username: 'LucasMelo',   display_name: 'Lucas Melo'  },
 ];
 
-const DEMO_MAIN_GROUP_ID  = '00000000-demo-0000-0000-000000000001';
-const DEMO_DRAFT_GROUP_ID = '00000000-demo-0000-0000-000000000002';
+const DEMO_MAIN_GROUP_ID  = '00000000-0000-0000-0000-000000000101';
+const DEMO_DRAFT_GROUP_ID = '00000000-0000-0000-0000-000000000102';
 
 // Slot names for a 15-player squad
 const GK_SLOTS  = ['GK1', 'GK2'];
@@ -39,6 +40,8 @@ interface SeedPlayer {
 // ── Main entry point ──────────────────────────────────────────────────────────
 
 export async function seedDemoData(currentUserId: string): Promise<void> {
+  await seedWCMatches();
+  await seedMatchdayFixtures();
   await seedFakeProfiles();
   await seedMainGroup(currentUserId);
   await seedQuickDraftGroup(currentUserId);
@@ -152,11 +155,15 @@ async function seedMainGroup(currentUserId: string): Promise<void> {
   if (d1) throw new Error(`Cleanup draft_picks failed: ${d1.message}`);
   const { error: d2 } = await adminSupabase.from('tokens').delete().eq('group_id', DEMO_MAIN_GROUP_ID);
   if (d2) throw new Error(`Cleanup tokens failed: ${d2.message}`);
-  const { error: d3 } = await adminSupabase.from('predictions').delete().eq('group_id', DEMO_MAIN_GROUP_ID);
+  const { error: d3 } = await adminSupabase.from('predictions').delete().in('user_id', allMemberIds);
   if (d3) throw new Error(`Cleanup predictions failed: ${d3.message}`);
-  for (const uid of allMemberIds) {
-    const { error: d4 } = await adminSupabase.from('squads').delete().eq('group_id', DEMO_MAIN_GROUP_ID).eq('user_id', uid);
-    if (d4) throw new Error(`Cleanup squads failed for ${uid}: ${d4.message}`);
+  // Squads are keyed by group_member_id — fetch existing member IDs before deleting
+  const { data: existingMembers } = await adminSupabase
+    .from('group_members').select('id').eq('group_id', DEMO_MAIN_GROUP_ID);
+  const existingMemberIds = (existingMembers ?? []).map((m: any) => m.id);
+  if (existingMemberIds.length > 0) {
+    const { error: d4 } = await adminSupabase.from('squads').delete().in('group_member_id', existingMemberIds);
+    if (d4) throw new Error(`Cleanup squads failed: ${d4.message}`);
   }
 
   // 3. Upsert group members
@@ -171,17 +178,23 @@ async function seedMainGroup(currentUserId: string): Promise<void> {
     .upsert(memberRows, { onConflict: 'group_id,user_id' });
   if (mErr) throw new Error(`Members upsert failed: ${mErr.message}`);
 
+  // Fetch group_member IDs (needed for squad inserts)
+  const { data: freshMembers } = await adminSupabase
+    .from('group_members').select('id, user_id').eq('group_id', DEMO_MAIN_GROUP_ID);
+  const memberIdByUser: Record<string, string> = {};
+  for (const m of (freshMembers ?? []) as any[]) memberIdByUser[m.user_id] = m.id;
+
   // 4. Assign and insert squads
   const players = await fetchPlayersByGroup();
   const alreadyDrafted = new Set<string>();
 
   for (let i = 0; i < allMemberIds.length; i++) {
+    const uid = allMemberIds[i];
     const squad = assignSquad(players, alreadyDrafted, i);
     const squadRows = squad.map((p) => ({
-      group_id: DEMO_MAIN_GROUP_ID,
-      user_id: allMemberIds[i],
+      group_member_id: memberIdByUser[uid],
       player_id: p.playerId,
-      slot_name: p.slotName,
+      slot: p.slotName,
       is_starting: STARTING_SLOTS.has(p.slotName),
       acquired_via: 'draft',
     }));
@@ -200,7 +213,7 @@ async function seedMainGroup(currentUserId: string): Promise<void> {
   // 7. Seed predictions for MD1–3
   const { data: fixtureData } = await supabase
     .from('matchday_fixtures')
-    .select('id, matchday, token_reward_type')
+    .select('id, matchday, token_reward')
     .in('matchday', [1, 2, 3]);
 
   const fixtures = fixtureData ?? [];
@@ -212,21 +225,18 @@ async function seedMainGroup(currentUserId: string): Promise<void> {
       const correct = ((ui + fixture.matchday) % 3) === 0;
       await adminSupabase.from('predictions').upsert({
         user_id: uid,
-        group_id: DEMO_MAIN_GROUP_ID,
         fixture_id: fixture.id,
-        matchday: fixture.matchday,
-        predicted_home: correct ? 1 : 2,
-        predicted_away: correct ? 0 : 1,
+        home_score: correct ? 1 : 2,
+        away_score: correct ? 0 : 1,
         is_correct: correct,
       }, { onConflict: 'user_id,fixture_id' });
 
-      if (correct && fixture.token_reward_type) {
+      if (correct && fixture.token_reward) {
         await adminSupabase.from('tokens').insert({
           user_id: uid,
           group_id: DEMO_MAIN_GROUP_ID,
-          token_type: fixture.token_reward_type,
+          token_type: fixture.token_reward,
           earned_matchday: fixture.matchday,
-          status: 'earned',
         });
       }
     }
@@ -238,10 +248,10 @@ async function seedMainGroup(currentUserId: string): Promise<void> {
     .select('id')
     .eq('user_id', currentUserId)
     .eq('group_id', DEMO_MAIN_GROUP_ID)
-    .eq('status', 'earned')
+    .is('used_matchday', null)
     .limit(1);
   if (earnedTokens && earnedTokens.length > 0) {
-    await adminSupabase.from('tokens').update({ status: 'used', used_matchday: 1 }).eq('id', earnedTokens[0].id);
+    await adminSupabase.from('tokens').update({ used_matchday: 1 }).eq('id', earnedTokens[0].id);
   }
 
   // 9. Calculate group scores
@@ -264,7 +274,6 @@ async function seedQuickDraftGroup(currentUserId: string): Promise<void> {
       max_members: 4,
       draft_status: 'in_progress',
       current_draft_round: 1,
-      current_pick_number: 1,
       tokens_enabled: true,
       draft_order_mode: 'random',
       color: '#8B5CF6',
@@ -293,6 +302,7 @@ async function seedQuickDraftGroup(currentUserId: string): Promise<void> {
     user_id: string;
     player_id: string;
     pick_number: number;
+    round: number;
     draft_round: number;
   }> = [];
   const teamCount: Record<string, number> = {};
@@ -308,6 +318,7 @@ async function seedQuickDraftGroup(currentUserId: string): Promise<void> {
       user_id: fakeUserId,
       player_id: player.id,
       pick_number: (fakePickCount + 1) * 2,
+      round: fakePickCount + 1,
       draft_round: 1,
     });
     fakePickCount++;

@@ -9,19 +9,19 @@ export type TokenType = 'nullify' | 'double_points' | 'bench_boost';
 
 export const TOKEN_META: Record<TokenType, { icon: string; label: string; color: string; description: string }> = {
   nullify: {
-    icon: '🚫',
+    icon: '✕',
     label: 'Nullify',
     color: '#e74c3c',
     description: "Target any opponent's starting player — they score 0 pts this matchday.",
   },
   double_points: {
-    icon: '⚡',
+    icon: '×2',
     label: 'Double Points',
     color: '#f39c12',
     description: "Pick one of your own players — their points are doubled this matchday.",
   },
   bench_boost: {
-    icon: '💪',
+    icon: '▲',
     label: 'Bench Boost',
     color: '#27ae60',
     description: 'All four of your bench players also earn points this matchday.',
@@ -69,18 +69,18 @@ const MOCK_FIXTURES: {
   homeScoreActual?: number;
   awayScoreActual?: number;
 }[] = [
-  // ── MD1 (Group Stage — Round 1, Jun 2026) ────────────────────────────────
-  { matchday: 1, homeTeam: 'United States', awayTeam: 'Brazil',  matchDate: '2026-06-11T18:00:00Z', tokenReward: 'nullify' },
-  { matchday: 1, homeTeam: 'France',    awayTeam: 'Argentina',  matchDate: '2026-06-12T21:00:00Z', tokenReward: 'double_points' },
-  { matchday: 1, homeTeam: 'Spain',     awayTeam: 'Germany',    matchDate: '2026-06-13T21:00:00Z', tokenReward: 'bench_boost' },
-  // ── MD2 (Group Stage — Round 2, Jun 2026) ────────────────────────────────
-  { matchday: 2, homeTeam: 'England',   awayTeam: 'Morocco',    matchDate: '2026-06-17T18:00:00Z', tokenReward: 'nullify' },
-  { matchday: 2, homeTeam: 'Portugal',  awayTeam: 'Japan',      matchDate: '2026-06-18T21:00:00Z', tokenReward: 'double_points' },
-  { matchday: 2, homeTeam: 'Mexico',    awayTeam: 'Colombia',   matchDate: '2026-06-19T21:00:00Z', tokenReward: 'bench_boost' },
-  // ── MD3 (Group Stage — Round 3, Jun 2026) ────────────────────────────────
-  { matchday: 3, homeTeam: 'Brazil',    awayTeam: 'France',     matchDate: '2026-06-23T21:00:00Z', tokenReward: 'nullify' },
-  { matchday: 3, homeTeam: 'Argentina', awayTeam: 'Germany',    matchDate: '2026-06-23T21:00:00Z', tokenReward: 'double_points' },
-  { matchday: 3, homeTeam: 'Canada',    awayTeam: 'Spain',      matchDate: '2026-06-24T18:00:00Z', tokenReward: 'bench_boost' },
+  // ── MD1 (Group Stage — Round 1, Jun 11–16 2026) ──────────────────────────
+  { matchday: 1, homeTeam: 'United States', awayTeam: 'Bolivia',   matchDate: '2026-06-12T21:00:00Z', tokenReward: 'nullify' },
+  { matchday: 1, homeTeam: 'Germany',       awayTeam: 'Australia', matchDate: '2026-06-13T18:00:00Z', tokenReward: 'double_points' },
+  { matchday: 1, homeTeam: 'Brazil',        awayTeam: 'Nigeria',   matchDate: '2026-06-15T21:00:00Z', tokenReward: 'bench_boost' },
+  // ── MD2 (Group Stage — Round 2, Jun 17–22 2026) ──────────────────────────
+  { matchday: 2, homeTeam: 'France',    awayTeam: 'Uruguay',   matchDate: '2026-06-17T21:00:00Z', tokenReward: 'nullify' },
+  { matchday: 2, homeTeam: 'Spain',     awayTeam: 'Morocco',   matchDate: '2026-06-19T18:00:00Z', tokenReward: 'double_points' },
+  { matchday: 2, homeTeam: 'England',   awayTeam: 'Colombia',  matchDate: '2026-06-20T21:00:00Z', tokenReward: 'bench_boost' },
+  // ── MD3 (Group Stage — Round 3, Jun 23–26 2026) ──────────────────────────
+  { matchday: 3, homeTeam: 'Argentina', awayTeam: 'Ecuador',   matchDate: '2026-06-25T21:00:00Z', tokenReward: 'nullify' },
+  { matchday: 3, homeTeam: 'Portugal',  awayTeam: 'Belgium',   matchDate: '2026-06-25T21:00:00Z', tokenReward: 'double_points' },
+  { matchday: 3, homeTeam: 'Netherlands', awayTeam: 'Poland',  matchDate: '2026-06-26T18:00:00Z', tokenReward: 'bench_boost' },
   // ── MD4 (Round of 32, Jul 2026) ──────────────────────────────────────────
   { matchday: 4, homeTeam: 'TBD', awayTeam: 'TBD', matchDate: '2026-07-01T18:00:00Z', tokenReward: 'nullify' },
   { matchday: 4, homeTeam: 'TBD', awayTeam: 'TBD', matchDate: '2026-07-01T21:00:00Z', tokenReward: 'double_points' },
@@ -123,6 +123,65 @@ export async function seedMatchdayFixtures(): Promise<void> {
   }));
 
   const { error } = await supabase.from('matchday_fixtures').insert(rows);
+  if (error) throw error;
+}
+
+// ── WC match seed data ────────────────────────────────────────────────────────
+
+export async function seedWCMatches(): Promise<void> {
+  // 12 groups × 4 teams — team names must match CLUBS registry (players.team_name)
+  const GROUPS: Array<{ name: string; teams: [string, string, string, string] }> = [
+    { name: 'A', teams: ['United States', 'Germany',     'Senegal',      'Ecuador']    },
+    { name: 'B', teams: ['Mexico',        'France',      'Morocco',      'Japan']      },
+    { name: 'C', teams: ['Canada',        'England',     'Ivory Coast',  'South Korea'] },
+    { name: 'D', teams: ['Brazil',        'Portugal',    'Algeria',      'Australia']  },
+    { name: 'E', teams: ['Argentina',     'Spain',       'Egypt',        'Saudi Arabia'] },
+    { name: 'F', teams: ['Colombia',      'Netherlands', 'Nigeria',      'Iran']       },
+    { name: 'G', teams: ['Uruguay',       'Belgium',     'South Africa', 'Qatar']      },
+    { name: 'H', teams: ['Paraguay',      'Croatia',     'Cape Verde',   'Uzbekistan'] },
+    { name: 'I', teams: ['Switzerland',   'Panama',      'Tunisia',      'New Zealand'] },
+    { name: 'J', teams: ['Austria',       'Haiti',       'Jordan',       'TBD']        },
+    { name: 'K', teams: ['Norway',        'Curaçao',     'TBD',          'TBD']        },
+    { name: 'L', teams: ['Scotland',      'TBD',         'TBD',          'TBD']        },
+  ];
+
+  // 2 groups share each day across the 6-day round window
+  const R1: Record<string, string> = { A:'2026-06-11',B:'2026-06-11',C:'2026-06-12',D:'2026-06-12',E:'2026-06-13',F:'2026-06-13',G:'2026-06-14',H:'2026-06-14',I:'2026-06-15',J:'2026-06-15',K:'2026-06-16',L:'2026-06-16' };
+  const R2: Record<string, string> = { A:'2026-06-17',B:'2026-06-17',C:'2026-06-18',D:'2026-06-18',E:'2026-06-19',F:'2026-06-19',G:'2026-06-20',H:'2026-06-20',I:'2026-06-21',J:'2026-06-21',K:'2026-06-22',L:'2026-06-22' };
+  // Round 3 — matches within same group are simultaneous
+  const R3: Record<string, string> = { A:'2026-06-23',B:'2026-06-23',C:'2026-06-23',D:'2026-06-24',E:'2026-06-24',F:'2026-06-24',G:'2026-06-25',H:'2026-06-25',I:'2026-06-25',J:'2026-06-26',K:'2026-06-26',L:'2026-06-26' };
+
+  const rows: any[] = [];
+
+  for (const { name: g, teams: [t1, t2, t3, t4] } of GROUPS) {
+    // Round 1: t1 vs t2, t3 vs t4
+    rows.push({ matchday: 1, stage: `Group ${g}`, home_team: t1, away_team: t2, match_date: `${R1[g]}T18:00:00Z`, status: 'SCHEDULED' });
+    rows.push({ matchday: 1, stage: `Group ${g}`, home_team: t3, away_team: t4, match_date: `${R1[g]}T21:00:00Z`, status: 'SCHEDULED' });
+    // Round 2: t1 vs t3, t2 vs t4
+    rows.push({ matchday: 2, stage: `Group ${g}`, home_team: t1, away_team: t3, match_date: `${R2[g]}T18:00:00Z`, status: 'SCHEDULED' });
+    rows.push({ matchday: 2, stage: `Group ${g}`, home_team: t2, away_team: t4, match_date: `${R2[g]}T21:00:00Z`, status: 'SCHEDULED' });
+    // Round 3: t1 vs t4, t2 vs t3 (simultaneous — same kickoff time)
+    rows.push({ matchday: 3, stage: `Group ${g}`, home_team: t1, away_team: t4, match_date: `${R3[g]}T21:00:00Z`, status: 'SCHEDULED' });
+    rows.push({ matchday: 3, stage: `Group ${g}`, home_team: t2, away_team: t3, match_date: `${R3[g]}T21:00:00Z`, status: 'SCHEDULED' });
+  }
+
+  // Knockout rounds (opponents TBD until group stage resolves)
+  const KNOCKOUTS: Array<{ matchday: number; stage: string; dates: string[] }> = [
+    { matchday: 4, stage: 'Round of 32',  dates: ['2026-07-01','2026-07-01','2026-07-02','2026-07-02','2026-07-03','2026-07-03','2026-07-04','2026-07-04','2026-07-01','2026-07-01','2026-07-02','2026-07-02','2026-07-03','2026-07-03','2026-07-04','2026-07-04'] },
+    { matchday: 5, stage: 'Round of 16',  dates: ['2026-07-07','2026-07-07','2026-07-08','2026-07-08','2026-07-09','2026-07-09','2026-07-09','2026-07-09'] },
+    { matchday: 6, stage: 'Quarter-final',dates: ['2026-07-14','2026-07-14','2026-07-15','2026-07-15'] },
+    { matchday: 7, stage: 'Semi-final',   dates: ['2026-07-18','2026-07-19'] },
+    { matchday: 8, stage: 'Final',        dates: ['2026-07-26'] },
+  ];
+
+  for (const { matchday, stage, dates } of KNOCKOUTS) {
+    dates.forEach((date, i) => {
+      rows.push({ matchday, stage, home_team: 'TBD', away_team: 'TBD', match_date: `${date}T${i % 2 === 0 ? '18' : '21'}:00:00Z`, status: 'SCHEDULED' });
+    });
+  }
+
+  await supabase.from('wc_matches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  const { error } = await supabase.from('wc_matches').insert(rows);
   if (error) throw error;
 }
 

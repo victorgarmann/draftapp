@@ -12,7 +12,7 @@ import {
   Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams, useNavigation, router } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/contexts/auth-context';
 import {
   getDraftState,
@@ -30,6 +30,7 @@ import { PlayerDetailSheet } from '@/components/player-detail-sheet';
 import { GradientScreen } from '@/components/gradient-screen';
 import { getActiveWCTeams } from '@/services/prediction.service';
 import { notifyYourDraftTurn } from '@/services/notification.service';
+import { AppHeader } from '@/components/app-header';
 import { FormationField } from '@/components/formation-field';
 import { CLUBS, CONFEDERATIONS, getClub, findClub, type Confederation } from '@/constants/clubs';
 import type { Player, Position } from '@/types/models';
@@ -63,7 +64,6 @@ function lastName(name: string) {
 export default function LiveDraftScreen() {
   const { id: groupId } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
-  const navigation = useNavigation();
 
   const [draftState,   setDraftState]   = useState<DraftState | null>(null);
   const [players,      setPlayers]      = useState<Player[]>([]);
@@ -110,14 +110,7 @@ export default function LiveDraftScreen() {
   }, [groupId, user]);
 
   useEffect(() => {
-    navigation.getParent()?.setOptions({
-      title: 'Draft Board',
-      headerRight: () => (
-        <TouchableOpacity onPress={() => router.replace('/(tabs)/home')} style={{ marginRight: 4 }}>
-          <Text style={{ color: T.accent, fontSize: 15, fontFamily: 'Fredoka_600SemiBold' }}>Home</Text>
-        </TouchableOpacity>
-      ),
-    });
+    // header is rendered inline via AppHeader
     loadAll().finally(() => setLoading(false));
     const unsubscribe = subscribeToDraft(groupId!, loadAll);
     return unsubscribe;
@@ -273,6 +266,7 @@ export default function LiveDraftScreen() {
 
   return (
     <GradientScreen>
+      <AppHeader />
       {/* Status banner */}
       {draftState.status === 'completed' ? (
         <View style={[s.banner, { backgroundColor: T.success }]}>
@@ -343,33 +337,43 @@ export default function LiveDraftScreen() {
                       key={g}
                       style={[s.posChip, posGroup === g && s.posChipActive]}
                       onPress={() => setPosGroup(g)}
+                      activeOpacity={1}
                     >
                       <Text style={[s.posChipText, posGroup === g && s.posChipTextActive]}>{g}</Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
 
-                {/* Club logo grid — hidden while searching */}
-                {!search && <View style={s.clubGrid}>
-                  {availableClubs.map((club) => {
-                    const active = selectedClub === club.name;
-                    return (
-                      <TouchableOpacity
-                        key={club.name}
-                        style={[s.clubBtn, active && s.clubBtnActive]}
-                        onPress={() => setSelectedClub(active ? null : club.name)}
-                        activeOpacity={0.7}
-                      >
-                        <View style={[s.clubCircle, active && s.clubCircleActive]}>
-                          <ClubLogo url={club.logoUrl} shortName={club.shortName} size={54} />
-                        </View>
-                        <Text style={[s.clubShort, active && s.clubShortActive]} numberOfLines={1}>
-                          {club.shortName}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>}
+                {/* Club filter — full grid or compact active strip */}
+                {!search && (
+                  selectedClub ? (
+                    <TouchableOpacity
+                      style={s.clubActiveStrip}
+                      onPress={() => setSelectedClub(null)}
+                      activeOpacity={0.7}
+                    >
+                      <ClubLogo url={findClub(selectedClub)?.logoUrl} shortName={findClub(selectedClub)?.shortName ?? '?'} size={36} />
+                      <Text style={s.clubActiveStripName}>{selectedClub}</Text>
+                      <Text style={s.clubActiveStripX}>×</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={s.clubGrid}>
+                      {availableClubs.map((club) => (
+                        <TouchableOpacity
+                          key={club.name}
+                          style={s.clubBtn}
+                          onPress={() => setSelectedClub(club.name)}
+                          activeOpacity={0.7}
+                        >
+                          <View style={s.clubCircle}>
+                            <ClubLogo url={club.logoUrl} shortName={club.shortName} size={54} />
+                          </View>
+                          <Text style={s.clubShort} numberOfLines={1}>{club.shortName}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )
+                )}
 
                 {/* Result count */}
                 <View style={s.resultRow}>
@@ -406,7 +410,6 @@ export default function LiveDraftScreen() {
                     <Text style={s.playerName}>{item.name}</Text>
                     <Text style={s.playerTeam}>{item.teamName}</Text>
                   </View>
-                  {isSelected && <Text style={s.selectedMark}>✓</Text>}
                 </TouchableOpacity>
               );
             }}
@@ -684,7 +687,7 @@ const s = StyleSheet.create({
   center:    { justifyContent: 'center', alignItems: 'center' },
   errorText: { color: T.error, fontSize: 15, fontFamily: 'Fredoka_500Medium' },
 
-  banner:      { padding: 14, paddingTop: 18 },
+  banner:      { padding: 14, paddingTop: 18, marginTop: 4 },
   bannerTitle: { color: '#fff', fontSize: 16, fontFamily: 'Fredoka_700Bold' },
   bannerSub:   { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2, fontFamily: 'Fredoka_500Medium' },
 
@@ -697,8 +700,7 @@ const s = StyleSheet.create({
   // Search + filter bar
   searchRow: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 10, paddingVertical: 8, backgroundColor: T.surface,
-    borderBottomWidth: 1, borderBottomColor: T.glassBorder,
+    paddingHorizontal: 10, paddingVertical: 8,
   },
   searchInput: {
     flex: 1, backgroundColor: T.surface2, borderRadius: R.chip,
@@ -716,8 +718,8 @@ const s = StyleSheet.create({
   filterBadgeText: { fontSize: 10, fontFamily: 'Fredoka_700Bold', color: '#fff' },
 
   // Position group chips
-  posChips: { paddingHorizontal: 10, paddingVertical: 8, gap: 6, backgroundColor: T.surface, borderBottomWidth: 1, borderBottomColor: T.glassBorder },
-  posChip:          { paddingHorizontal: 14, paddingVertical: 5, borderRadius: 20, backgroundColor: T.surface, borderWidth: 1, borderColor: T.glassBorder },
+  posChips: { paddingHorizontal: 10, paddingVertical: 10, gap: 6 },
+  posChip:          { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 20, backgroundColor: T.surface, borderWidth: 1, borderColor: T.glassBorder },
   posChipActive:    { backgroundColor: T.accent, borderColor: T.accent },
   posChipText:      { fontSize: 12, fontFamily: 'Fredoka_700Bold', color: T.textSecondary },
   posChipTextActive:{ color: '#fff' },
@@ -726,19 +728,24 @@ const s = StyleSheet.create({
   clubGrid: {
     flexDirection: 'row', flexWrap: 'wrap',
     paddingHorizontal: 8, paddingVertical: 12,
-    backgroundColor: T.surface, borderBottomWidth: 1, borderBottomColor: T.glassBorder,
     justifyContent: 'space-evenly', gap: 4,
   },
   clubBtn: { width: '22%', alignItems: 'center', paddingVertical: 6, borderRadius: R.card, gap: 5 },
-  clubBtnActive: { backgroundColor: T.accent + '22' },
   clubCircle: {
     width: 62, height: 62, borderRadius: 31,
     backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center',
     padding: 5, borderWidth: 1.5, borderColor: T.glassBorder,
   },
-  clubCircleActive: { borderColor: T.accent, borderWidth: 2.5 },
-  clubShort:       { fontSize: 10, fontFamily: 'Fredoka_700Bold', color: T.textSecondary },
-  clubShortActive: { color: T.accent },
+  clubShort: { fontSize: 10, fontFamily: 'Fredoka_700Bold', color: T.textSecondary },
+
+  // Active country strip (replaces grid when a country is selected)
+  clubActiveStrip: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 14, paddingVertical: 10,
+    backgroundColor: T.accent + '18',
+  },
+  clubActiveStripName: { flex: 1, fontSize: 15, fontFamily: 'Fredoka_700Bold', color: T.accent },
+  clubActiveStripX:    { fontSize: 22, color: T.accent, fontFamily: 'Fredoka_400Regular', lineHeight: 26 },
 
   // Result row
   resultRow: {

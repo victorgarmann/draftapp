@@ -14,7 +14,7 @@ import {
   Modal,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useLocalSearchParams, router, useNavigation } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/contexts/auth-context';
 import { supabase } from '@/lib/supabase';
 import {
@@ -35,11 +35,11 @@ const GROUP_COLORS = [
 import { T, R } from '@/constants/theme';
 import { GradientScreen } from '@/components/gradient-screen';
 import { GlassCard } from '@/components/glass-card';
+import { AppHeader } from '@/components/app-header';
 
 export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
-  const navigation = useNavigation();
 
   const [group,    setGroup]    = useState<GroupDetail | null>(null);
   const [members,  setMembers]  = useState<MemberWithProfile[]>([]);
@@ -69,7 +69,7 @@ export default function GroupDetailScreen() {
         setDraftOrder(ordered);
       }
       setError(null);
-      navigation.getParent()?.setOptions({ title: g?.name ?? 'Group' });
+      // title rendered via AppHeader
     } catch (e: any) {
       setError(e.message ?? 'Failed to load group.');
     }
@@ -108,6 +108,7 @@ export default function GroupDetailScreen() {
   if (error || !group) {
     return (
       <GradientScreen>
+        <AppHeader />
         <View style={s.center}>
           <Text style={s.errorText}>{error ?? 'Group not found.'}</Text>
         </View>
@@ -207,6 +208,7 @@ export default function GroupDetailScreen() {
 
   return (
     <GradientScreen>
+      <AppHeader title={group.name} />
       <ScrollView contentContainerStyle={s.scroll}>
         {/* Status banner */}
         <GlassCard style={[s.statusBanner, { borderColor: statusColor + '44' }]}>
@@ -296,11 +298,17 @@ export default function GroupDetailScreen() {
               </View>
 
               <View style={s.memberInfo}>
-                <Text style={s.memberName} numberOfLines={1}>
-                  {item.username}
-                  {isMe ? '  (you)' : ''}
-                  {item.userId === group.creatorId ? '  👑' : ''}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                  <Text style={s.memberName} numberOfLines={1}>
+                    {item.username}
+                    {isMe ? '  (you)' : ''}
+                  </Text>
+                  {item.userId === group.creatorId && (
+                    <View style={[s.creatorBadge, { backgroundColor: accent + '22' }]}>
+                      <Text style={[s.creatorBadgeText, { color: accent }]}>creator</Text>
+                    </View>
+                  )}
+                </View>
                 {item.displayName && (
                   <Text style={s.memberDisplay} numberOfLines={1}>{item.displayName}</Text>
                 )}
@@ -433,18 +441,16 @@ export default function GroupDetailScreen() {
           </>
         )}
 
-        {/* Leave group (non-creator only) */}
-        {!isCreator && (
-          <TouchableOpacity
-            style={[s.leaveBtn, leaving && s.leaveBtnDisabled]}
-            onPress={handleLeave}
-            disabled={leaving}
-          >
-            {leaving
-              ? <ActivityIndicator color={T.error} />
-              : <Text style={s.leaveBtnText}>Leave Group</Text>}
-          </TouchableOpacity>
-        )}
+        {/* Leave group */}
+        <TouchableOpacity
+          style={[s.leaveBtn, leaving && s.leaveBtnDisabled]}
+          onPress={handleLeave}
+          disabled={leaving}
+        >
+          {leaving
+            ? <ActivityIndicator color={T.error} />
+            : <Text style={s.leaveBtnText}>Leave Group</Text>}
+        </TouchableOpacity>
 
         {error && <Text style={s.errorInline}>{error}</Text>}
 
@@ -686,7 +692,9 @@ const s = StyleSheet.create({
   },
   memberAvatarText: { fontSize: 16, fontFamily: 'Fredoka_700Bold' },
   memberInfo:       { flex: 1 },
-  memberName:       { fontSize: 15, color: T.text, fontFamily: 'Fredoka_600SemiBold' },
+  memberName:       { fontSize: 15, color: T.text, fontFamily: 'Fredoka_600SemiBold', flexShrink: 1 },
+  creatorBadge:     { borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
+  creatorBadgeText: { fontSize: 10, fontFamily: 'Fredoka_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.4 },
   memberDisplay:    { fontSize: 12, color: T.textSecondary, fontFamily: 'Fredoka_500Medium', marginTop: 1 },
   memberPts:        { fontSize: 17, fontFamily: 'Fredoka_700Bold', color: T.text },
 

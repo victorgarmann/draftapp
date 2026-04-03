@@ -41,6 +41,7 @@ import { FormationField, type SpotLayout } from '@/components/formation-field';
 import { JerseyIcon } from '@/components/jersey-icon';
 import { TokenCoin } from '@/components/token-coin';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { T, R } from '@/constants/theme';
 import { GradientScreen } from '@/components/gradient-screen';
 import { GlassCard } from '@/components/glass-card';
@@ -60,6 +61,7 @@ function formationLabel(starters: SquadPlayer[]) {
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function MyTeamScreen() {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [groups, setGroups] = useState<GroupDetail[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<GroupDetail | null>(null);
@@ -350,7 +352,7 @@ export default function MyTeamScreen() {
               : `MD${next.matchday} deadline: ${new Date(next.deadline).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}`;
 
         return (
-          <View style={styles.pinnedHeader}>
+          <View style={[styles.pinnedHeader, { paddingTop: insets.top + 10 }]}>
             <View style={styles.pinnedDeadline}>
               <Ionicons
                 name={locked ? 'lock-closed' : (next && hours < 24) ? 'warning-outline' : 'time-outline'}
@@ -1097,7 +1099,6 @@ function DraggableBenchSpot({
           <JerseyIcon teamName={player.playerTeam} isGK={player.playerPosition === 'GK'} size={52} />
         </View>
         <Text style={styles.playerName} numberOfLines={1}>{lastName}</Text>
-        {editing && <Text style={styles.dragHint}>↕</Text>}
       </TouchableOpacity>
     </View>
   );
@@ -1204,7 +1205,7 @@ const styles = StyleSheet.create({
   // Pinned header (deadline + tokens)
   pinnedHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 10,
+    paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10,
     borderBottomWidth: 1, borderBottomColor: T.glassBorder,
     backgroundColor: T.bgGradientStart,
   },

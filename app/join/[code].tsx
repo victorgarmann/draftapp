@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { joinGroup } from '@/services/group.service';
 import { T } from '@/constants/theme';
 import { GradientScreen } from '@/components/gradient-screen';
+import { AppHeader } from '@/components/app-header';
 
 export default function JoinGroupScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
@@ -48,6 +49,7 @@ export default function JoinGroupScreen() {
 
   return (
     <GradientScreen>
+      <AppHeader title="Joining Group" />
       <View style={styles.container}>
         {status === 'loading' ? (
           <>

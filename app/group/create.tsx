@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,14 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import { router, useNavigation } from 'expo-router';
+import { router } from 'expo-router';
 import { useAuth } from '@/contexts/auth-context';
 import { createGroup } from '@/services/group.service';
 import type { DraftOrderMode } from '@/types/models';
 import { T, R } from '@/constants/theme';
 import { GradientScreen } from '@/components/gradient-screen';
 import { GlassCard } from '@/components/glass-card';
+import { AppHeader } from '@/components/app-header';
 
 const GROUP_COLORS = [
   '#3B82F6', '#8B5CF6', '#10B981', '#EF4444',
@@ -24,8 +25,6 @@ const GROUP_COLORS = [
 ];
 
 export default function CreateGroupScreen() {
-  const navigation = useNavigation();
-  useEffect(() => { navigation.getParent()?.setOptions({ title: 'Create Group' }); }, []);
   const { user } = useAuth();
   const [name, setName] = useState('');
   const [color, setColor] = useState(GROUP_COLORS[0]);
@@ -57,15 +56,12 @@ export default function CreateGroupScreen() {
 
   return (
     <GradientScreen>
+      <AppHeader />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
-          <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
-            <Text style={styles.closeBtnText}>✕</Text>
-          </TouchableOpacity>
-
           <Text style={styles.label}>Group name</Text>
           <TextInput
             style={styles.input}
@@ -135,8 +131,6 @@ export default function CreateGroupScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   inner: { padding: 24 },
-  closeBtn: { alignSelf: 'flex-end', padding: 4, marginBottom: 8 },
-  closeBtnText: { fontSize: 20, color: T.textSecondary },
   label: { fontSize: 13, fontFamily: 'Fredoka_600SemiBold', color: T.textSecondary, marginBottom: 10, marginTop: 24, textTransform: 'uppercase', letterSpacing: 0.8 },
   input: {
     borderWidth: 1,

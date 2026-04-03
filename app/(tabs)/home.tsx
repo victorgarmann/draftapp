@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth-context';
 import { getMyGroups, getMyGroupRanks, type GroupDetail } from '@/services/group.service';
 import { getNextMatchday, isLineupLocked } from '@/services/rating.service';
@@ -64,6 +65,7 @@ function formatDraftDate(iso: string): string {
 }
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const { user, profile } = useAuth();
   const [groups, setGroups] = useState<GroupDetail[]>([]);
   const [ranks, setRanks] = useState<Record<string, { rank: number; points: number }>>({});
@@ -103,7 +105,7 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <GradientScreen>
-        <View style={s.header}>
+        <View style={[s.header, { paddingTop: insets.top + 12 }]}>
           <View>
             <Text style={s.greeting}>{greeting()},</Text>
             <Text style={s.username}>{username}</Text>
@@ -130,7 +132,7 @@ export default function HomeScreen() {
   return (
     <GradientScreen>
       {/* ── Header ── */}
-      <View style={s.header}>
+      <View style={[s.header, { paddingTop: insets.top + 12 }]}>
         <View>
           <Text style={s.greeting}>{greeting()},</Text>
           <Text style={s.username}>{username}</Text>
@@ -139,6 +141,7 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView
+        style={s.scrollFill}
         contentContainerStyle={s.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={T.accent} />}
         showsVerticalScrollIndicator={false}
@@ -295,11 +298,12 @@ const s = StyleSheet.create({
 
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingTop: 56, paddingBottom: 16, paddingHorizontal: 20,
+    paddingBottom: 16, paddingHorizontal: 20,
   },
   greeting: { fontSize: 13, color: T.textSecondary, fontFamily: 'Fredoka_500Medium' },
   username: { fontSize: 24, fontWeight: '800', color: T.text, marginTop: 2, fontFamily: 'Fredoka_700Bold' },
 
+  scrollFill: { flex: 1 },
   scroll: { padding: 16, gap: 10, paddingBottom: 24 },
 
   statsRow: {

@@ -30,6 +30,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { T, R } from '@/constants/theme';
 import { GradientScreen } from '@/components/gradient-screen';
 import { GlassCard } from '@/components/glass-card';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
 function formatDeadline(isoString: string): string {
@@ -149,13 +150,14 @@ export default function FixturesScreen() {
     byMatchday.get(f.matchday)!.push(f);
   }
 
+  const insets = useSafeAreaInsets();
   const upcomingMds = MATCHDAY_SCHEDULE.filter((md) => new Date(md.date) >= now);
   const pastMds     = MATCHDAY_SCHEDULE.filter((md) => new Date(md.date) < now).reverse();
 
   return (
     <GradientScreen>
       {/* Inner tab bar */}
-      <View style={s.tabBar}>
+      <View style={[s.tabBar, { marginTop: insets.top + 12 }]}>
         <TouchableOpacity style={[s.tabItem, innerTab === 'predict'  && s.tabActive]} onPress={() => setInnerTab('predict')}>
           <Text style={[s.tabText, innerTab === 'predict'  && s.tabTextActive]}>Predict</Text>
         </TouchableOpacity>
@@ -421,8 +423,11 @@ function CalendarTab({
           <GlassCard key={md.matchday} style={s.calCard}>
             {/* Header */}
             <View style={s.calCardHeader}>
+              <View style={[s.calMdBadge, isPast ? s.calMdBadgePast : s.calMdBadgeUpcoming]}>
+                <Text style={[s.calMdBadgeText, isPast ? s.calMdBadgeTextPast : s.calMdBadgeTextUpcoming]}>MD{md.matchday}</Text>
+              </View>
               <View style={{ flex: 1 }}>
-                <Text style={s.calCardLabel}>MD{md.matchday} · {md.label}</Text>
+                <Text style={s.calCardLabel}>{md.label}</Text>
                 <Text style={s.calCardDate}>
                   {new Date(md.date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 </Text>
@@ -613,6 +618,12 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 10,
     padding: 14, borderBottomWidth: 1, borderBottomColor: T.glassBorder,
   },
+  calMdBadge:             { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, alignItems: 'center', justifyContent: 'center' },
+  calMdBadgeUpcoming:     { backgroundColor: T.accent },
+  calMdBadgePast:         { backgroundColor: T.surface2 },
+  calMdBadgeText:         { fontSize: 13, fontFamily: 'Fredoka_700Bold' },
+  calMdBadgeTextUpcoming: { color: '#fff' },
+  calMdBadgeTextPast:     { color: T.textSecondary },
   calCardLabel: { fontSize: 14, fontFamily: 'Fredoka_700Bold', color: T.text },
   calCardDate:  { fontSize: 12, color: T.textSecondary, marginTop: 2, fontFamily: 'Fredoka_500Medium' },
   calBadge:     { borderRadius: R.chip, paddingHorizontal: 10, paddingVertical: 4 },

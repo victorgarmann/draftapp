@@ -9,6 +9,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/auth-context';
 import { getProfileStats, type ProfileStats } from '@/services/profile.service';
@@ -19,6 +20,7 @@ import { GradientScreen } from '@/components/gradient-screen';
 import { GlassCard } from '@/components/glass-card';
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const { user, profile, signOut, updateProfile } = useAuth();
   const [signingOut,    setSigningOut]    = useState(false);
   const [editingUsername, setEditingUsername] = useState(false);
@@ -89,7 +91,7 @@ export default function ProfileScreen() {
 
   return (
     <GradientScreen>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top }]}>
         {/* Avatar */}
         <View style={styles.avatarSection}>
           <TouchableOpacity
