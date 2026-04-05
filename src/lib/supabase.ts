@@ -1,16 +1,17 @@
 import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import secureStoreAdapter from './secure-store-adapter';
 import env from '../config/env';
 
-// Use AsyncStorage on native, localStorage on web, undefined during SSR (in-memory fallback)
+// Use SecureStore (Keychain) on native, localStorage on web.
+// AsyncStorage triggers file I/O that throws NSException on iOS 26.
 const storage =
   Platform.OS === 'web'
     ? typeof window !== 'undefined'
       ? window.localStorage
       : undefined
-    : AsyncStorage;
+    : secureStoreAdapter;
 
 export const supabase = createClient(
   env.supabase.url,

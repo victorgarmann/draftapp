@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { initializeAuth, getReactNativePersistence, getAuth } from 'firebase/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import secureStoreAdapter from './secure-store-adapter';
 import env from '../config/env';
 
 const firebaseConfig = env.firebase;
@@ -9,12 +9,13 @@ const app = getApps().length === 0
   ? initializeApp(firebaseConfig)
   : getApps()[0];
 
-// Use initializeAuth with AsyncStorage persistence so sessions survive app restarts.
+// Use SecureStore (Keychain) for persistence — avoids AsyncStorage file I/O
+// which throws NSException on iOS 26 via the old bridge dispatch path.
 // Wrap in try/catch: initializeAuth throws if called twice (e.g. during hot reload).
 let auth;
 try {
   auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage),
+    persistence: getReactNativePersistence(secureStoreAdapter),
   });
 } catch {
   auth = getAuth(app);
