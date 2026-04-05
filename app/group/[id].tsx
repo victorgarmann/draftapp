@@ -13,7 +13,6 @@ import {
   Platform,
   Modal,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/contexts/auth-context';
 import { supabase } from '@/lib/supabase';
@@ -527,84 +526,66 @@ export default function GroupDetailScreen() {
         </View>
       )}
 
-      {/* Date picker */}
+      {/* Date picker — pure JS modal (replaces native datetimepicker) */}
       {showDatePicker && (
-        Platform.OS === 'ios' ? (
-          <Modal transparent animationType="slide">
-            <View style={s.pickerOverlay}>
-              <View style={s.pickerSheet}>
-                <DateTimePicker
-                  value={pickedDate}
-                  mode="date"
-                  display="spinner"
-                  minimumDate={new Date()}
-                  onChange={(_, d) => d && setPickedDate(d)}
-                  themeVariant="dark"
-                />
-                <View style={s.pickerActions}>
-                  <TouchableOpacity onPress={() => setShowDatePicker(false)} style={s.pickerBtn}>
-                    <Text style={s.pickerBtnCancel}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => { setShowDatePicker(false); setShowTimePicker(true); }}
-                    style={[s.pickerBtn, { backgroundColor: accent }]}
-                  >
-                    <Text style={s.pickerBtnConfirm}>Next: Time →</Text>
-                  </TouchableOpacity>
-                </View>
+        <Modal transparent animationType="slide">
+          <View style={s.pickerOverlay}>
+            <View style={s.pickerSheet}>
+              <Text style={s.pickerTitle}>Pick a date</Text>
+              <View style={s.dateRow}>
+                <TouchableOpacity style={s.dateBtn} onPress={() => setPickedDate(prev => { const d = new Date(prev); d.setDate(d.getDate() - 1); return d < new Date() ? new Date() : d; })}>
+                  <Text style={s.dateBtnText}>-</Text>
+                </TouchableOpacity>
+                <Text style={s.dateDisplay}>{pickedDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</Text>
+                <TouchableOpacity style={s.dateBtn} onPress={() => setPickedDate(prev => { const d = new Date(prev); d.setDate(d.getDate() + 1); return d; })}>
+                  <Text style={s.dateBtnText}>+</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={s.pickerActions}>
+                <TouchableOpacity onPress={() => setShowDatePicker(false)} style={s.pickerBtn}>
+                  <Text style={s.pickerBtnCancel}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => { setShowDatePicker(false); setShowTimePicker(true); }}
+                  style={[s.pickerBtn, { backgroundColor: accent }]}
+                >
+                  <Text style={s.pickerBtnConfirm}>Next: Time</Text>
+                </TouchableOpacity>
               </View>
             </View>
-          </Modal>
-        ) : (
-          <DateTimePicker
-            value={pickedDate}
-            mode="date"
-            minimumDate={new Date()}
-            onChange={(_, d) => {
-              setShowDatePicker(false);
-              if (d) { setPickedDate(d); setShowTimePicker(true); }
-            }}
-          />
-        )
+          </View>
+        </Modal>
       )}
 
-      {/* Time picker */}
+      {/* Time picker — pure JS modal */}
       {showTimePicker && (
-        Platform.OS === 'ios' ? (
-          <Modal transparent animationType="slide">
-            <View style={s.pickerOverlay}>
-              <View style={s.pickerSheet}>
-                <DateTimePicker
-                  value={pickedDate}
-                  mode="time"
-                  display="spinner"
-                  onChange={(_, d) => d && setPickedDate(d)}
-                  themeVariant="dark"
-                />
-                <View style={s.pickerActions}>
-                  <TouchableOpacity onPress={() => setShowTimePicker(false)} style={s.pickerBtn}>
-                    <Text style={s.pickerBtnCancel}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => { setShowTimePicker(false); handleScheduleDraft(pickedDate); }}
-                    style={[s.pickerBtn, { backgroundColor: accent }]}
-                  >
-                    <Text style={s.pickerBtnConfirm}>Save</Text>
-                  </TouchableOpacity>
-                </View>
+        <Modal transparent animationType="slide">
+          <View style={s.pickerOverlay}>
+            <View style={s.pickerSheet}>
+              <Text style={s.pickerTitle}>Pick a time</Text>
+              <View style={s.dateRow}>
+                <TouchableOpacity style={s.dateBtn} onPress={() => setPickedDate(prev => { const d = new Date(prev); d.setHours(d.getHours() - 1); return d; })}>
+                  <Text style={s.dateBtnText}>-</Text>
+                </TouchableOpacity>
+                <Text style={s.dateDisplay}>{pickedDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</Text>
+                <TouchableOpacity style={s.dateBtn} onPress={() => setPickedDate(prev => { const d = new Date(prev); d.setHours(d.getHours() + 1); return d; })}>
+                  <Text style={s.dateBtnText}>+</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={s.pickerActions}>
+                <TouchableOpacity onPress={() => setShowTimePicker(false)} style={s.pickerBtn}>
+                  <Text style={s.pickerBtnCancel}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => { setShowTimePicker(false); handleScheduleDraft(pickedDate); }}
+                  style={[s.pickerBtn, { backgroundColor: accent }]}
+                >
+                  <Text style={s.pickerBtnConfirm}>Save</Text>
+                </TouchableOpacity>
               </View>
             </View>
-          </Modal>
-        ) : (
-          <DateTimePicker
-            value={pickedDate}
-            mode="time"
-            onChange={(_, d) => {
-              setShowTimePicker(false);
-              if (d) handleScheduleDraft(d);
-            }}
-          />
-        )
+          </View>
+        </Modal>
       )}
     </GradientScreen>
   );
@@ -745,6 +726,11 @@ const s = StyleSheet.create({
 
   pickerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   pickerSheet: { backgroundColor: T.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 32 },
+  pickerTitle: { color: T.text, fontFamily: 'Fredoka_600SemiBold', fontSize: 17, textAlign: 'center', marginTop: 20, marginBottom: 8 },
+  dateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, paddingVertical: 16 },
+  dateBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: T.surface2, alignItems: 'center', justifyContent: 'center' },
+  dateBtnText: { color: T.text, fontFamily: 'Fredoka_700Bold', fontSize: 22 },
+  dateDisplay: { color: T.text, fontFamily: 'Fredoka_500Medium', fontSize: 17, minWidth: 180, textAlign: 'center' },
   pickerActions: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, gap: 12 },
   pickerBtn: { flex: 1, borderRadius: R.button, paddingVertical: 13, alignItems: 'center' },
   pickerBtnCancel: { color: T.textSecondary, fontFamily: 'Fredoka_600SemiBold', fontSize: 15 },
