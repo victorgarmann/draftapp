@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "fotdraft",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.fotdraft",
@@ -48,8 +48,7 @@
       "@react-native-community/datetimepicker"
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     },
     "extra": {
       "router": {},
