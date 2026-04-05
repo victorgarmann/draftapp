@@ -45,6 +45,7 @@
           }
         }
       ],
+      "./plugins/fix-atomic-writes"
     ],
     "experiments": {
       "typedRoutes": true
