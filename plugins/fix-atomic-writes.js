@@ -3,22 +3,55 @@ const fs = require("fs");
 const path = require("path");
 
 /**
- * ObjC code injected at the TOP of AppDelegate.mm.
+ * Two-part injection into AppDelegate.mm:
  *
- * Uses __attribute__((constructor)) to run before any +load or application
- * delegate method.  Enumerates ALL loaded ObjC classes to find every concrete
- * implementation of the three "write-to-file" selectors, then replaces each
- * with a wrapper that forces atomically:NO (or strips NSDataWritingAtomic).
+ * 1. DIAGNOSTIC: installs std::set_terminate handler that captures and logs
+ *    the exact NSException (name + reason) before the crash.  This tells us
+ *    what React's old bridge is rethrowing.
  *
- * This is necessary because NSData / NSString are class clusters — the base
- * class may not own the method; a private subclass like __NSCFData or
- * NSConcreteData does.  Swizzling only the base class misses those.
+ * 2. FIX: swizzles all concrete implementations of writeToFile: methods on
+ *    iOS 26+ to force atomically:NO, in case that IS the exception source.
  */
-const SWIZZLE_CODE = `
-// -------- AtomicWriteFix (injected by fix-atomic-writes plugin) --------
+const INJECTED_CODE = `
+// -------- AtomicWriteFix + Diagnostics (injected by plugin) --------
 #import <objc/runtime.h>
+#include <exception>
+#include <cstdlib>
 
-// Per-IMP originals are stored in a simple linked list (allocated before main).
+// ==================== PART 1: EXCEPTION DIAGNOSTICS ====================
+// Installs a custom std::terminate handler so that when React.framework's
+// old bridge rethrows an NSException and no outer catch exists, we capture
+// the exception details via NSLog BEFORE abort() fires.  The output goes
+// to the unified OS log visible in Console.app / deviceconsole / crash
+// "Application Specific Information" section.
+
+static std::terminate_handler _awf_prev_terminate = nullptr;
+
+static void _awf_terminate_handler() {
+    // Try to retrieve the current ObjC exception
+    @try {
+        @throw;  // rethrow current exception so we can catch it
+    } @catch (NSException *exception) {
+        NSLog(@"\\n\\n========================================");
+        NSLog(@"[AtomicWriteFix] CRASH DIAGNOSTIC");
+        NSLog(@"NSException name:   %@", exception.name);
+        NSLog(@"NSException reason: %@", exception.reason);
+        NSLog(@"NSException info:   %@", exception.userInfo);
+        NSLog(@"Call stack:");
+        for (NSString *frame in exception.callStackSymbols) {
+            NSLog(@"  %@", frame);
+        }
+        NSLog(@"========================================\\n\\n");
+    } @catch (id other) {
+        NSLog(@"[AtomicWriteFix] CRASH: non-NSException ObjC object: %@", other);
+    } @catch (...) {
+        NSLog(@"[AtomicWriteFix] CRASH: unknown C++ exception");
+    }
+    // Fall through to abort
+    abort();
+}
+
+// ==================== PART 2: ATOMIC WRITE SWIZZLE ====================
 typedef struct _AWF_Entry {
     Class cls;
     SEL sel;
@@ -41,7 +74,6 @@ static void _awf_store(Class cls, SEL sel, IMP imp) {
     _awf_head = e;
 }
 
-// --- Replacement for -[? writeToFile:atomically:encoding:error:] ---
 static BOOL _awf_NSString_writeToFile(id self, SEL _cmd, NSString *path,
     BOOL atomically, NSStringEncoding enc, NSError **err) {
     IMP orig = _awf_lookup(object_getClass(self), _cmd);
@@ -50,7 +82,6 @@ static BOOL _awf_NSString_writeToFile(id self, SEL _cmd, NSString *path,
     return orig ? ((Fn)orig)(self, _cmd, path, NO, enc, err) : NO;
 }
 
-// --- Replacement for -[? writeToFile:atomically:] (NSData) ---
 static BOOL _awf_NSData_writeToFile_a(id self, SEL _cmd, NSString *path,
     BOOL atomically) {
     IMP orig = _awf_lookup(object_getClass(self), _cmd);
@@ -59,7 +90,6 @@ static BOOL _awf_NSData_writeToFile_a(id self, SEL _cmd, NSString *path,
     return orig ? ((Fn)orig)(self, _cmd, path, NO) : NO;
 }
 
-// --- Replacement for -[? writeToFile:options:error:] (NSData) ---
 static BOOL _awf_NSData_writeToFile_o(id self, SEL _cmd, NSString *path,
     NSDataWritingOptions opts, NSError **err) {
     opts &= ~NSDataWritingAtomic;
@@ -69,7 +99,6 @@ static BOOL _awf_NSData_writeToFile_o(id self, SEL _cmd, NSString *path,
     return orig ? ((Fn)orig)(self, _cmd, path, opts, err) : NO;
 }
 
-// --- Replacement for -[? writeToFile:atomically:] (NSDictionary) ---
 static BOOL _awf_NSDictionary_writeToFile(id self, SEL _cmd, NSString *path,
     BOOL atomically) {
     IMP orig = _awf_lookup(object_getClass(self), _cmd);
@@ -78,7 +107,6 @@ static BOOL _awf_NSDictionary_writeToFile(id self, SEL _cmd, NSString *path,
     return orig ? ((Fn)orig)(self, _cmd, path, NO) : NO;
 }
 
-// --- Replacement for -[? writeToFile:atomically:] (NSArray) ---
 static BOOL _awf_NSArray_writeToFile(id self, SEL _cmd, NSString *path,
     BOOL atomically) {
     IMP orig = _awf_lookup(object_getClass(self), _cmd);
@@ -94,8 +122,6 @@ static void _awf_swizzleSelector(SEL sel, IMP replacement, Class baseClass) {
 
     for (unsigned int i = 0; i < classCount; i++) {
         Class cls = classes[i];
-
-        // Only swizzle classes that are subclasses of (or are) the base class
         Class superIter = cls;
         BOOL isSubclass = NO;
         while (superIter) {
@@ -104,19 +130,16 @@ static void _awf_swizzleSelector(SEL sel, IMP replacement, Class baseClass) {
         }
         if (!isSubclass) continue;
 
-        // Only swizzle if this class has its OWN implementation (not inherited)
         Method m = class_getInstanceMethod(cls, sel);
         if (!m) continue;
 
-        // Check that the implementation belongs to this class, not a superclass
         Method superM = class_getSuperclass(cls)
             ? class_getInstanceMethod(class_getSuperclass(cls), sel) : NULL;
-        if (superM && method_getImplementation(m) == method_getImplementation(superM)) {
-            continue; // Inherited — will be caught when we swizzle the super
-        }
+        if (superM && method_getImplementation(m) == method_getImplementation(superM))
+            continue;
 
         IMP origIMP = method_getImplementation(m);
-        if (origIMP == replacement) continue; // Already swizzled
+        if (origIMP == replacement) continue;
 
         _awf_store(cls, sel, origIMP);
         method_setImplementation(m, replacement);
@@ -125,47 +148,36 @@ static void _awf_swizzleSelector(SEL sel, IMP replacement, Class baseClass) {
     free(classes);
 }
 
+// ==================== INSTALLER ====================
 __attribute__((constructor))
 static void _awf_install(void) {
+    // Always install diagnostic handler (works on all iOS versions)
+    _awf_prev_terminate = std::set_terminate(_awf_terminate_handler);
+    NSLog(@"[AtomicWriteFix] Installed terminate handler for crash diagnostics");
+
     if (@available(iOS 26, *)) {
-        // NSString -writeToFile:atomically:encoding:error:
         _awf_swizzleSelector(
             @selector(writeToFile:atomically:encoding:error:),
             (IMP)_awf_NSString_writeToFile, [NSString class]);
-
-        // NSData -writeToFile:atomically:
         _awf_swizzleSelector(
             @selector(writeToFile:atomically:),
             (IMP)_awf_NSData_writeToFile_a, [NSData class]);
-
-        // NSData -writeToFile:options:error:
         _awf_swizzleSelector(
             @selector(writeToFile:options:error:),
             (IMP)_awf_NSData_writeToFile_o, [NSData class]);
-
-        // NSDictionary -writeToFile:atomically:
         _awf_swizzleSelector(
             @selector(writeToFile:atomically:),
             (IMP)_awf_NSDictionary_writeToFile, [NSDictionary class]);
-
-        // NSArray -writeToFile:atomically:
         _awf_swizzleSelector(
             @selector(writeToFile:atomically:),
             (IMP)_awf_NSArray_writeToFile, [NSArray class]);
-
-        NSLog(@"[AtomicWriteFix] Swizzled all atomic write methods for iOS 26+");
+        NSLog(@"[AtomicWriteFix] Swizzled atomic write methods for iOS 26+");
     }
 }
 // -------- End AtomicWriteFix --------
 
 `;
 
-/**
- * Expo config plugin: injects atomic-write swizzle code directly into
- * AppDelegate.mm so it is guaranteed to be compiled.  The previous approach
- * (separate .m file + withXcodeProject) silently failed to add the file to
- * Xcode's compile-sources build phase.
- */
 const withFixAtomicWrites = (config) => {
   config = withDangerousMod(config, [
     "ios",
@@ -181,25 +193,22 @@ const withFixAtomicWrites = (config) => {
 
       let source = fs.readFileSync(appDelegatePath, "utf-8");
 
-      // Avoid double-injection on repeated prebuild
       if (source.includes("_awf_install")) {
         return config;
       }
 
-      // Inject right after the first #import block
       const importRegex = /(#import\s+.+\n)+/;
       const match = source.match(importRegex);
       if (match) {
         const insertPos = match.index + match[0].length;
         source =
-          source.slice(0, insertPos) + SWIZZLE_CODE + source.slice(insertPos);
+          source.slice(0, insertPos) + INJECTED_CODE + source.slice(insertPos);
       } else {
-        // Fallback: prepend
-        source = SWIZZLE_CODE + source;
+        source = INJECTED_CODE + source;
       }
 
       fs.writeFileSync(appDelegatePath, source);
-      console.log("[fix-atomic-writes] Injected atomic write fix into AppDelegate.mm");
+      console.log("[fix-atomic-writes] Injected diagnostic + fix into AppDelegate.mm");
 
       return config;
     },
