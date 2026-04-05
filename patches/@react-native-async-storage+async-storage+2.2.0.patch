@@ -1,0 +1,22 @@
+diff --git a/node_modules/@react-native-async-storage/async-storage/ios/RNCAsyncStorage.mm b/node_modules/@react-native-async-storage/async-storage/ios/RNCAsyncStorage.mm
+index fa3bb04..c3f89f3 100644
+--- a/node_modules/@react-native-async-storage/async-storage/ios/RNCAsyncStorage.mm
++++ b/node_modules/@react-native-async-storage/async-storage/ios/RNCAsyncStorage.mm
+@@ -564,7 +564,7 @@ RCT_EXPORT_MODULE()
+     NSError *error;
+     NSString *serialized = RCTJSONStringify(_manifest, &error);
+     [serialized writeToFile:RCTCreateStorageDirectoryPath(RCTGetManifestFilePath())
+-                 atomically:YES
++                 atomically:NO
+                    encoding:NSUTF8StringEncoding
+                       error:&error];
+     NSDictionary *errorOut;
+@@ -632,7 +632,7 @@ RCT_EXPORT_MODULE()
+         _manifest[key] = value;
+         return nil;
+     }
+-    [value writeToFile:filePath atomically:YES encoding:NSUTF8StringEncoding error:&error];
++    [value writeToFile:filePath atomically:NO encoding:NSUTF8StringEncoding error:&error];
+     [RCTGetCache() setObject:value forKey:key cost:value.length];
+     if (error) {
+         errorOut = RCTMakeError(@"Failed to write value.", error, @{@"key": key});
